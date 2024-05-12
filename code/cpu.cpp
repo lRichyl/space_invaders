@@ -30,6 +30,7 @@ struct CPU {
         };
     };
     u8 *M; // Pseudo register that contains the dereferenced memory pointed by HL.
+    b32 halt;
 
     u16 SP; // Stack pointer
     u16 PC; // Program counter
@@ -478,7 +479,6 @@ internal u32 ExecuteInstruction(CPU *cpu){
 
     // CMC Instruction.   CMC  :  CY  CY=!CY
     case 0x3F:{
-        SetFlag(cpu, FLAG_CARRY);
         (cpu->flags & FLAG_CARRY) ? UnSetFlag(cpu, FLAG_CARRY) : SetFlag(cpu, FLAG_CARRY);
 
         return 4;
@@ -488,9 +488,37 @@ internal u32 ExecuteInstruction(CPU *cpu){
     
 
     default:{
-        printf("Instruction: %X not implemented\n", cpu->instruction);
-        return 0;   
+        // printf("Instruction: %X not implemented\n", cpu->instruction);
+        break;   
     }
 
+    }
+
+
+    // MOV instructions.
+    switch(cpu->instruction & 0xF0){
+        case 0x40:
+        case 0x50:
+        case 0x60:
+        case 0x70:{
+            cpu->B = 0x20;
+            cpu->C = 0x35;
+            cpu->D = 0x42;
+            cpu->E = 0x56;
+            cpu->H = 0x64;
+            cpu->L = 0xAA;
+            *cpu->M = 0xDC;
+            cpu->A = 0xF9;
+            u8 destination = (cpu->instruction & 0x38) >> 3;
+            u8 source      = cpu->instruction & 0x07;
+
+            *cpu->register_map[destination] = *cpu->register_map[source];
+
+            if(cpu->instruction & 0x06){
+                // if(((cpu->instruction & 0xF0) == 0x70)) cpu->halt = true;   // TODO: Implement halt when implementing interrupts.
+                return 7; // Moving to the M register takes more cycles.
+            } 
+            return 5;
+        }
     }
 }
