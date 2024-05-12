@@ -1,0 +1,88 @@
+#include <stdlib.h>
+#include <stdio.h>
+
+internal char* text_file_to_string(Arena *arena, const char* file_name){
+	FILE *fp;
+	long file_size;
+	// char *buffer;
+
+	fopen_s(&fp, file_name , "rb" );
+	if( !fp ){
+		printf("File could not be opened\n" );
+        return NULL;
+	}
+
+	fseek(fp, 0L, SEEK_END);
+    file_size = ftell(fp);
+    rewind(fp);
+
+    // Allocate memory for buffer
+    char *buffer = (char *)arena_alloc(arena, file_size + 1);
+    if (!buffer) {
+        fclose(fp);
+        printf("Error: Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read file contents into buffer
+    if (fread(buffer, file_size, 1, fp) != 1) {
+        fclose(fp);
+        free(buffer);
+        printf("Error: Failed to read entire file %s\n", file_name);
+        exit(EXIT_FAILURE);
+    }
+
+    // Null-terminate the buffer
+    buffer[file_size] = '\0';
+
+    // Close file and return buffer
+    fclose(fp);
+    return buffer;
+}
+
+internal u8* load_binary_file(Arena *arena, const char* file_name, u32 *file_size){
+    FILE *fp;
+
+    fopen_s(&fp, file_name , "rb" );
+    if( !fp ){
+        printf("File could not be opened\n" );
+        return NULL;
+    }
+
+    fseek(fp, 0L, SEEK_END);
+    *file_size = ftell(fp);
+    rewind(fp);
+
+    // Allocate memory for buffer
+    u8 *buffer = (u8 *)arena_alloc(arena, *file_size);
+    if (!buffer) {
+        fclose(fp);
+        printf("Error: Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read file contents into buffer
+    if (fread(buffer, *file_size, 1, fp) != 1) {
+        fclose(fp);
+        free(buffer);
+        printf("Error: Failed to read entire file %s\n", file_name);
+        exit(EXIT_FAILURE);
+    }
+
+    // Close file and return buffer
+    fclose(fp);
+    return buffer;
+}
+
+internal bool file_exists(const char * filename)
+{
+    FILE *file = NULL;
+    fopen_s(&file, filename, "r");
+    if (file)
+    {
+        fclose(file);
+        return true;
+    }
+
+    return false;
+}
