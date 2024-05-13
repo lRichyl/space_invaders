@@ -66,6 +66,19 @@ internal void FetchNextInstructionByte(CPU *cpu){
     cpu->PC++;
 }
 
+internal bool CheckParityBits(u8 byte){
+    i32 count = 0;
+
+        // Count the set bits using Kernighan's Algorithm
+        while (byte) {
+            byte &= (byte - 1);
+            count++;
+        }
+
+        // Check if the count of set bits is even
+        return (count % 2 == 0);
+}
+
 internal u8 SumAndSetFlags(CPU *cpu, u8 summand_left, u8 summand_right, b32 check_carry = false){
     u8 result = summand_left + summand_right;
     if(result == 0)     
@@ -78,12 +91,14 @@ internal u8 SumAndSetFlags(CPU *cpu, u8 summand_left, u8 summand_right, b32 chec
     else
         UnSetFlag(cpu, FLAG_SIGN);
 
-    if(result % 2 == 0 && result > 0)
+    if(CheckParityBits(result))
         SetFlag(cpu, FLAG_PARITY);
     else
         UnSetFlag(cpu, FLAG_PARITY);
 
-    if(summand_left < 0x10 && result >= 0x10) 
+    u8 nibble_left_summand     = summand_left    & 0x0F;
+    u8 nibble_right_summand    = summand_right   & 0x0F;
+    if((nibble_left_summand + nibble_right_summand) > 0x0F) 
         SetFlag(cpu, FLAG_AUXCARRY);
     else
         UnSetFlag(cpu, FLAG_AUXCARRY);
@@ -110,7 +125,7 @@ internal u8 SubstractAndSetFlags(CPU *cpu, u8 minuend, u8 sustrahend, b32 check_
     else
         UnSetFlag(cpu, FLAG_SIGN);
 
-    if(result % 2 == 0 && result > 0)
+    if(CheckParityBits(result))
         SetFlag(cpu, FLAG_PARITY);
     else
         UnSetFlag(cpu, FLAG_PARITY);
@@ -495,30 +510,43 @@ internal u32 ExecuteInstruction(CPU *cpu){
     }
 
 
-    // MOV instructions.
+    // MOV instructions.   MOV :  DR <- SR.   (DR: Destination register.   SR: Source register)
     switch(cpu->instruction & 0xF0){
         case 0x40:
         case 0x50:
         case 0x60:
         case 0x70:{
-            cpu->B = 0x20;
-            cpu->C = 0x35;
-            cpu->D = 0x42;
-            cpu->E = 0x56;
-            cpu->H = 0x64;
-            cpu->L = 0xAA;
-            *cpu->M = 0xDC;
-            cpu->A = 0xF9;
-            u8 destination = (cpu->instruction & 0x38) >> 3;
-            u8 source      = cpu->instruction & 0x07;
+            u8 destination = (cpu->instruction & 0x38) >> 3; // The 4th to 6th bits encode the destination register.
+            u8 source      = cpu->instruction & 0x07;        // The first 3LSB encode the source register.
 
             *cpu->register_map[destination] = *cpu->register_map[source];
 
-            if(cpu->instruction & 0x06){
+            if(source == 0x06){ // Source register is register M
                 // if(((cpu->instruction & 0xF0) == 0x70)) cpu->halt = true;   // TODO: Implement halt when implementing interrupts.
                 return 7; // Moving to the M register takes more cycles.
             } 
             return 5;
+        }
+
+        // ADD and ADC instruction.
+        case 0x80:{
+            u8 source = cpu->instruction & 0x07;
+            cpu->B = 0x2E;
+            cpu->A = 0x6C;
+            // SetFlag(cpu, FLAG_CARRY);
+
+            // 4th bit encodes the instrcution. 0 for ADD and 1 for ADC.
+            if(!(cpu->instruction & 0x08)){ // ADD instruction.  ADD R  :  A <- A + R.   Affects all flags.
+                cpu->A = SumAndSetFlags(cpu, cpu->A, *cpu->register_map[source], true);
+
+            }else{ // ADC instruction.    ADC R  :  A <- A + R + CY
+                cpu->A = SumAndSetFlags(cpu, cpu->A, *cpu->register_map[source] + (cpu->flags & FLAG_CARRY), true);
+            }
+
+            if(source == 0x06){ // Source register is register M
+                return 7; 
+            } 
+            return 4;
         }
     }
 }
