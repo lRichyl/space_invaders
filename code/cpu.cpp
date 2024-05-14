@@ -48,6 +48,8 @@ struct CPU {
     u16 *wide_register_map[4];
     u8  *register_map[8];
 
+    b32 interrupts_enabled;
+
     u32 rom_size; // For testing.
 };
 
@@ -96,6 +98,7 @@ void PopFromStack(CPU *cpu, i32 register_pair_index){
         first  = cpu->memory[cpu->SP + 1];
 
         cpu->PC = (first << 8) | second;
+        cpu->PC++;
     }else if(register_pair_index <= 3){
         second = cpu->memory[cpu->SP];
         first  = cpu->memory[cpu->SP + 1];
@@ -569,7 +572,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
 
         // RP instruction.
         case 0xF0:{
-            if(!(cpu->flags & FLAG_SIGN)){ // Return if the number is positive.
+            if(!(cpu->flags & FLAG_SIGN)){ // Return if the sign flag is not set.
                 PopFromStack(cpu, -1);
                 return 11;
             }else{
@@ -577,14 +580,11 @@ internal u32 ExecuteInstruction(CPU *cpu){
             }
         }
 
+        // Pop instructions.
         case 0xC1:
         case 0xD1:
         case 0xE1:
         case 0xF1:{
-            cpu->SP = 0x3000;
-            cpu->DE = 0xFF35;
-            PushToStack(cpu, 1);
-
             u8 register_pair_index = (cpu->instruction & 0x30) >> 4;
             if(register_pair_index <= 2){
                 PopFromStack(cpu, register_pair_index);
@@ -593,6 +593,98 @@ internal u32 ExecuteInstruction(CPU *cpu){
             }
 
             return 10;
+        }
+
+        // JNZ instruction. Jump if not zero.
+        case 0xC2:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if(!(cpu->flags & FLAG_ZERO)){ 
+                cpu->PC = (high << 8) | low;
+            }
+            return 10;
+        }
+
+        // JNC instruction. Jump if the carry bit is not set.
+        case 0xD2:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if(!(cpu->flags & FLAG_CARRY)){ 
+                cpu->PC = (high << 8) | low;
+            }
+            return 10;
+        }
+
+        // JPO instruction.   Jump if the parity is odd.
+        case 0xE2:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if(!(cpu->flags & FLAG_PARITY)){ 
+                cpu->PC = (high << 8) | low;
+            }
+            return 10;
+        }
+
+        // JP instruction.   Jump if the Sign flag is not set.
+        case 0xF2:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if(!(cpu->flags & FLAG_SIGN)){ 
+                cpu->PC = (high << 8) | low;
+            }
+            return 10;
+        }
+
+        // JMP instruction.   Jump unconditionally to the immediate address.
+        case 0xC3:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            cpu->PC = (high << 8) | low;
+
+            return 10;
+        }
+
+        // // OUT instruction. Send the byte stored in the accumulator to device number [d8]. 
+        // case 0xD3:{
+                // @TODO: Implement.
+
+        //     return 10;
+        // }
+
+
+        // XTHL instruction.  Exchange stack.
+        case 0xE3:{
+            u8 previous_L = cpu->L;
+            cpu->L = cpu->memory[cpu->SP];
+            cpu->memory[cpu->SP] = previous_L;
+
+            u8 previous_H = cpu->H;
+            cpu->H = cpu->memory[cpu->SP + 1];
+            cpu->memory[cpu->SP + 1] = previous_H;
+
+            return 18;
+        }
+
+        // DI instruction.   Disable interrupts.
+        case 0xF3:{
+            cpu->interrupts_enabled = false;  // @TODO: Implement disabling interrupts.
+
+            return 4;
         }
 
         default:{

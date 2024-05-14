@@ -7,6 +7,8 @@ internal u32 RunSpaceInvaders(b32 *is_running){
         cpu.clock_speed = 2000000; // 2MHz
         cpu.is_initialized = true;
 
+        cpu.interrupts_enabled = true;
+
         // Flags with constant values.
         cpu.flags = cpu.flags | 0x02;    // 1 
         cpu.flags = cpu.flags & ~(0x08); // 0
