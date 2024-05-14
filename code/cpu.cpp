@@ -66,6 +66,36 @@ internal void FetchNextInstructionByte(CPU *cpu){
     cpu->PC++;
 }
 
+void PushToStack(CPU *cpu, i32 register_pair_index){
+    assert(register_pair_index <= 3);
+    if(register_pair_index <= 2){
+        cpu->memory[cpu->SP - 1] = (u8)((*cpu->wide_register_map[register_pair_index] & 0xFF00) >> 8);
+        cpu->memory[cpu->SP - 2] = (u8)((*cpu->wide_register_map[register_pair_index] & 0x00FF));
+    }else if(register_pair_index == 3){
+        cpu->memory[cpu->SP - 1] = cpu->A;
+        cpu->memory[cpu->SP - 2] = cpu->flags;
+    }
+
+    cpu->SP -= 2;
+}
+
+void PopFromStack(CPU *cpu, i32 register_pair_index){
+    u8 second;
+    u8 first;
+
+    if(register_pair_index <= 2){
+        second = cpu->memory[cpu->SP];
+        first  = cpu->memory[cpu->SP + 1];
+
+        *cpu->wide_register_map[register_pair_index] = (first << 8) | second;
+    }else if(register_pair_index == 3){
+        cpu->flags = cpu->memory[cpu->SP];
+        cpu->A = cpu->memory[cpu->SP + 1];
+    }
+
+    cpu->SP += 2;
+}
+
 internal bool CheckParityBits(u8 byte){
     i32 count = 0;
 
@@ -79,65 +109,59 @@ internal bool CheckParityBits(u8 byte){
         return (count % 2 == 0);
 }
 
-internal u8 SumAndSetFlags(CPU *cpu, u8 summand_left, u8 summand_right, b32 check_carry = false){
-    u8 result = summand_left + summand_right;
-    if(result == 0)     
+internal void SetZeroSignParity(CPU *cpu, u8 value){
+    if(value == 0)     
         SetFlag(cpu, FLAG_ZERO);
     else
         UnSetFlag(cpu, FLAG_ZERO);
 
-    if(result & 0x80)
+    if(value & 0x80)
         SetFlag(cpu, FLAG_SIGN);
     else
         UnSetFlag(cpu, FLAG_SIGN);
 
-    if(CheckParityBits(result))
+    if(CheckParityBits((u8)value))
         SetFlag(cpu, FLAG_PARITY);
     else
         UnSetFlag(cpu, FLAG_PARITY);
+}
+
+internal u8 SumAndSetFlags(CPU *cpu, u8 summand_left, u8 summand_right, b32 check_carry = false){
+    u16 result = (u16)summand_left + (u16)summand_right;
+    
+    SetZeroSignParity(cpu, (u8)result);
 
     u8 nibble_left_summand     = summand_left    & 0x0F;
     u8 nibble_right_summand    = summand_right   & 0x0F;
-    if((nibble_left_summand + nibble_right_summand) > 0x0F) 
+    if((nibble_left_summand + nibble_right_summand) & 0x10) 
         SetFlag(cpu, FLAG_AUXCARRY);
     else
         UnSetFlag(cpu, FLAG_AUXCARRY);
 
     if(check_carry){
-        if(summand_left > result) 
+        if(result & 0x100) 
             SetFlag(cpu, FLAG_CARRY);
         else
             UnSetFlag(cpu, FLAG_CARRY);
     }
 
-    return result;
+    return (u8)result;
 }
 
 internal u8 SubstractAndSetFlags(CPU *cpu, u8 minuend, u8 sustrahend, b32 check_carry = false){
     u8 result = minuend - sustrahend;
-    if(result == 0)     
-        SetFlag(cpu, FLAG_ZERO);
-    else
-        UnSetFlag(cpu, FLAG_ZERO);
-
-    if(result & 0x80)
-        SetFlag(cpu, FLAG_SIGN);
-    else
-        UnSetFlag(cpu, FLAG_SIGN);
-
-    if(CheckParityBits(result))
-        SetFlag(cpu, FLAG_PARITY);
-    else
-        UnSetFlag(cpu, FLAG_PARITY);
+    
+    SetZeroSignParity(cpu, result);
 
     u8 nibble_minuend    = minuend    & 0x0F;
-    u8 nibble_sustrahend = sustrahend & 0x0F;
-    if(nibble_minuend < nibble_sustrahend) 
+    u8 nibble_sustrahend = ((~sustrahend) & 0x0F) + 1;
+    if((nibble_minuend + nibble_sustrahend) & 0x10) 
         SetFlag(cpu, FLAG_AUXCARRY);
     else
         UnSetFlag(cpu, FLAG_AUXCARRY);
 
-    if(check_carry){
+    u16 result_carry = (u16)nibble_minuend + (u16)nibble_sustrahend;
+    if(!(result_carry & 0x100)){
         if(minuend < sustrahend) 
             SetFlag(cpu, FLAG_CARRY);
         else
@@ -528,19 +552,91 @@ internal u32 ExecuteInstruction(CPU *cpu){
             return 5;
         }
 
-        // ADD and ADC instruction.
+        // ADD and ADC instructions.
         case 0x80:{
             u8 source = cpu->instruction & 0x07;
-            cpu->B = 0x2E;
-            cpu->A = 0x6C;
-            // SetFlag(cpu, FLAG_CARRY);
 
-            // 4th bit encodes the instrcution. 0 for ADD and 1 for ADC.
+            // 4th bit encodes the instruction. 0 for ADD and 1 for ADC.
             if(!(cpu->instruction & 0x08)){ // ADD instruction.  ADD R  :  A <- A + R.   Affects all flags.
                 cpu->A = SumAndSetFlags(cpu, cpu->A, *cpu->register_map[source], true);
 
             }else{ // ADC instruction.    ADC R  :  A <- A + R + CY
                 cpu->A = SumAndSetFlags(cpu, cpu->A, *cpu->register_map[source] + (cpu->flags & FLAG_CARRY), true);
+            }
+
+            if(source == 0x06){ // Source register is register M
+                return 7; 
+            } 
+            return 4;
+        }
+
+        // SUB and SBB instructions.
+        case 0x90:{
+            u8 source = cpu->instruction & 0x07;
+
+            if(!(cpu->instruction & 0x08)){ // SUB instruction.  SUB R  :  A <- A - R   Affects all flags.
+                cpu->A = SubstractAndSetFlags(cpu, cpu->A, *cpu->register_map[source], true);
+
+            }else{ // SBB instruction.      SBB R  :  A <- A - R - CY
+                cpu->A = SubstractAndSetFlags(cpu, cpu->A, *cpu->register_map[source] + (cpu->flags & FLAG_CARRY), true);
+            }
+
+            if(source == 0x06){ // Source register is register M
+                return 7; 
+            } 
+            return 4;
+        }
+
+        // ANA and XRA instructions.
+        case 0xA0:{
+            u8 source = cpu->instruction & 0x07;
+
+            if(!(cpu->instruction & 0x08)){ // ANA instruction.  ANA R  :  A <- A & R   Affects all flags.
+                UnSetFlag(cpu, FLAG_CARRY);
+
+                if((cpu->A & 0x08) | (*cpu->register_map[source]) & 0x08){ // Verify how the ANA instructions affects the half carry flag.
+                    SetFlag(cpu, FLAG_AUXCARRY);
+                }else{
+                    UnSetFlag(cpu, FLAG_AUXCARRY);
+                }
+
+                cpu->A = cpu->A & *cpu->register_map[source];
+
+                SetZeroSignParity(cpu, cpu->A);
+
+            }else{ // XRA instruction.      XRA R  :  A <- A ^ R
+                UnSetFlag(cpu, FLAG_CARRY);
+                UnSetFlag(cpu, FLAG_AUXCARRY);
+
+                cpu->A = cpu->A ^ *cpu->register_map[source];
+
+                SetZeroSignParity(cpu, cpu->A);
+            }
+
+            if(source == 0x06){ // Source register is register M
+                return 7; 
+            } 
+            return 4;
+        }
+
+
+        // ORA and CMP instructions.
+        case 0xB0:{
+            u8 source = cpu->instruction & 0x07;
+
+            cpu->B = 0x05; // DELETE!!!!!!!!!!
+            cpu->A = 0x05;
+
+            if(!(cpu->instruction & 0x08)){ // ORA instruction.   ORA R  :  A <- A | R
+                UnSetFlag(cpu, FLAG_CARRY);
+                UnSetFlag(cpu, FLAG_AUXCARRY);
+
+                cpu->A = cpu->A | *cpu->register_map[source];
+
+                SetZeroSignParity(cpu, cpu->A);
+
+            }else{ // CMP instruction.  CMP R  :  A - R
+                u8 difference = SubstractAndSetFlags(cpu, cpu->A, *cpu->register_map[source], true);
             }
 
             if(source == 0x06){ // Source register is register M

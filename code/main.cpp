@@ -6,6 +6,12 @@
 #define local_persist static
 #define global_variable static
 
+#if BUILD_SLOW
+#define assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
+#else
+#define assert(Expression)
+#endif
+
 #include <stdint.h>
 
 typedef uint8_t u8;
