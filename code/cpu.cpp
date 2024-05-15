@@ -103,12 +103,12 @@ void PopFromStack(CPU *cpu, i32 register_pair_index){
 
         cpu->PC = (first << 8) | second;
         cpu->PC++;
-    }else if(register_pair_index <= 3){
+    }else if(register_pair_index <= 2){
         second = cpu->memory[cpu->SP];
         first  = cpu->memory[cpu->SP + 1];
 
         *cpu->wide_register_map[register_pair_index] = (first << 8) | second;
-    }else if(register_pair_index == 4){
+    }else if(register_pair_index == 3){
         cpu->flags = cpu->memory[cpu->SP];
         cpu->A = cpu->memory[cpu->SP + 1];
     }
@@ -275,10 +275,16 @@ internal u32 ExecuteInstruction(CPU *cpu){
         // INX Instrucion.  INX R  :  RP <- RP+1
         case 0x03:
         case 0x13:
-        case 0x23:
-        case 0x33:{
+        case 0x23:{
             u8 register_pair_index = (cpu->instruction & 0xF0) >> 4;
             (*cpu->wide_register_map[register_pair_index])++;
+
+            return 5;
+        }
+
+        // INX SP.
+        case 0x33:{
+            cpu->SP++;
 
             return 5;
         }
@@ -408,11 +414,23 @@ internal u32 ExecuteInstruction(CPU *cpu){
         // DAD Instruction.  DAD R :   HL = HL + RP
         case 0x09:
         case 0x19:
-        case 0x29:
-        case 0x39:{
+        case 0x29:{
             u8 register_pair_index = (cpu->instruction & 0xF0) >> 4;
             u16 previous_value = cpu->HL;
             cpu->HL += *cpu->wide_register_map[register_pair_index];
+
+            if(previous_value > cpu->HL) 
+                SetFlag(cpu, FLAG_CARRY);
+            else
+                UnSetFlag(cpu, FLAG_CARRY);
+
+            return 10;
+        }
+
+        // DAD SP.
+        case 0x39:{
+            u16 previous_value = cpu->HL;
+            cpu->HL += cpu->SP;
 
             if(previous_value > cpu->HL) 
                 SetFlag(cpu, FLAG_CARRY);
@@ -462,14 +480,18 @@ internal u32 ExecuteInstruction(CPU *cpu){
         // DCX Instruction.  DCX RP :  RP = RP-1
         case 0x0B:
         case 0x1B:
-        case 0x2B:
-        case 0x3B:{
+        case 0x2B:{
             u8 register_pair_index = (cpu->instruction & 0xF0) >> 4;
             (*cpu->wide_register_map[register_pair_index])--;
 
             return 5;
         }
 
+        case 0x3B:{
+            cpu->SP--;
+
+            return 5;
+        }
 
         // INR Instruction.  INR R  :  R <- R+1   Where R is an odd register.
         case 0x0C:
@@ -593,11 +615,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
         case 0xE1:
         case 0xF1:{
             u8 register_pair_index = (cpu->instruction & 0x30) >> 4;
-            if(register_pair_index <= 2){
-                PopFromStack(cpu, register_pair_index);
-            }else if(register_pair_index == 3){
-                PopFromStack(cpu, 4);
-            }
+            PopFromStack(cpu, register_pair_index);
 
             return 10;
         }
@@ -743,7 +761,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
         }
 
         // CP instruction.  Go to subroutine if the sign is positive. (Sign bit is zero).
-        case 0xE4:{
+        case 0xF4:{
             FetchNextInstructionByte(cpu);
             u8 low = cpu->data_byte;
             FetchNextInstructionByte(cpu);
@@ -757,6 +775,65 @@ internal u32 ExecuteInstruction(CPU *cpu){
             return 11;
 
         }
+
+        // Push instructions.
+        case 0xC5:
+        case 0xD5:
+        case 0xE5:
+        case 0xF5:{
+            u8 register_pair_index = (cpu->instruction & 0x30) >> 4;
+            PushToStack(cpu, register_pair_index);
+
+            return 10;
+        }
+
+        // ADI instruction.  ADI D8  :  A <- A + D8
+        case 0xC6:{
+            FetchNextInstructionByte(cpu);
+            cpu->A = SumAndSetFlags(cpu, cpu->A, cpu->data_byte, true);
+
+            return 7;
+        }
+
+        // SUI instruction.  SUI D8  :  A <- A - D8
+        case 0xD6:{
+            FetchNextInstructionByte(cpu);
+            cpu->A = SubstractAndSetFlags(cpu, cpu->A, cpu->data_byte, true);
+
+            return 7;
+        }
+
+        // ANI instruction.  ANI D8  :  A <- A & D8
+        case 0xE6:{
+            FetchNextInstructionByte(cpu);
+
+            UnSetFlag(cpu, FLAG_CARRY);
+
+            if((cpu->A & 0x08) | (cpu->data_byte & 0x08)){ // @TODO: Verify how the ANA instructions affects the half carry flag.
+                SetFlag(cpu, FLAG_AUXCARRY);
+            }else{
+                UnSetFlag(cpu, FLAG_AUXCARRY);
+            }
+
+            cpu->A = cpu->A & cpu->data_byte;
+
+            SetZeroSignParity(cpu, cpu->A);
+
+            return 7;
+        }
+
+        // ORI instruction.   ORI D8  :  A <- A | D8
+        case 0xF6:{
+            UnSetFlag(cpu, FLAG_CARRY);
+            UnSetFlag(cpu, FLAG_AUXCARRY);
+
+            cpu->A = cpu->A | cpu->data_byte;
+
+            SetZeroSignParity(cpu, cpu->A);
+
+            return 7;
+        }
+
 
         default:{
             // printf("Instruction: %X not implemented\n", cpu->instruction);
@@ -825,7 +902,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
             if(!(cpu->instruction & 0x08)){ // ANA instruction.  ANA R  :  A <- A & R   Affects all flags.
                 UnSetFlag(cpu, FLAG_CARRY);
 
-                if((cpu->A & 0x08) | (*cpu->register_map[source]) & 0x08){ // Verify how the ANA instructions affects the half carry flag.
+                if((cpu->A & 0x08) | (*cpu->register_map[source]) & 0x08){ // @TODO: Verify how the ANA instructions affects the half carry flag.
                     SetFlag(cpu, FLAG_AUXCARRY);
                 }else{
                     UnSetFlag(cpu, FLAG_AUXCARRY);

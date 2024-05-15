@@ -22,8 +22,7 @@ internal u32 RunSpaceInvaders(b32 *is_running){
         cpu.wide_register_map[0] = &cpu.BC;
         cpu.wide_register_map[1] = &cpu.DE;
         cpu.wide_register_map[2] = &cpu.HL;
-        cpu.wide_register_map[3] = &cpu.SP;
-        cpu.wide_register_map[4] = &cpu.PSW;
+        cpu.wide_register_map[3] = &cpu.PSW;
 
         cpu.register_map[0] = &cpu.B;
         cpu.register_map[1] = &cpu.C;
