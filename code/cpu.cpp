@@ -834,6 +834,22 @@ internal u32 ExecuteInstruction(CPU *cpu){
             return 7;
         }
 
+        // RST instruction.  Call interrupt routine.
+        case 0xC7:
+        case 0xD7:
+        case 0xE7:
+        case 0xF7:
+        case 0xCF:
+        case 0xDF:
+        case 0xEF:
+        case 0xFF:{
+            u16 address = (u16)cpu->instruction & 0x38;
+            PushToStack(cpu, -1);
+            cpu->PC = address;
+
+            return 11;
+        }
+
 
         default:{
             // printf("Instruction: %X not implemented\n", cpu->instruction);
