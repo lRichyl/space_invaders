@@ -76,7 +76,11 @@ internal void FetchNextInstructionByte(CPU *cpu){
 
 void PushToStack(CPU *cpu, i32 register_pair_index){
     assert(register_pair_index <= 3);
-    if(register_pair_index <= 2){
+
+    if(register_pair_index == -1){  // Push the program counter to the stack.
+        cpu->memory[cpu->SP - 1] = (u8)((cpu->PC & 0xFF00) >> 8);
+        cpu->memory[cpu->SP - 2] = (u8)((cpu->PC & 0x00FF));
+    }else if(register_pair_index <= 2){
         cpu->memory[cpu->SP - 1] = (u8)((*cpu->wide_register_map[register_pair_index] & 0xFF00) >> 8);
         cpu->memory[cpu->SP - 2] = (u8)((*cpu->wide_register_map[register_pair_index] & 0x00FF));
     }else if(register_pair_index == 3){
@@ -191,6 +195,9 @@ internal u32 ExecuteInstruction(CPU *cpu){
     // This function returns the duration in cycles of the current instruction.
     cpu->M = &cpu->memory[cpu->HL]; // @TODO: Verify this.
     FetchNextInstructionByte(cpu);
+
+    if(cpu->halt) return 7;
+
     switch(cpu->instruction){
         case 0x00:// NOP Instruction.
         case 0x10:
@@ -687,6 +694,70 @@ internal u32 ExecuteInstruction(CPU *cpu){
             return 4;
         }
 
+        // CNZ instruction.  Go to subroutine if the zero bit is not set.
+        case 0xC4:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if(!(cpu->flags & FLAG_ZERO)){ 
+                PushToStack(cpu, -1);
+                cpu->PC = (high << 8) | low;
+                return 17;
+            }
+            return 11;
+
+        }
+
+        // CNC instruction.  Go to subroutine if the carry bit is not set.
+        case 0xD4:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if(!(cpu->flags & FLAG_CARRY)){ 
+                PushToStack(cpu, -1);
+                cpu->PC = (high << 8) | low;
+                return 17;
+            }
+            return 11;
+
+        }
+
+        // CPO instruction.  Go to subroutine if the parity is odd. (Parity bit is zero).
+        case 0xE4:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if(!(cpu->flags & FLAG_PARITY)){ 
+                PushToStack(cpu, -1);
+                cpu->PC = (high << 8) | low;
+                return 17;
+            }
+            return 11;
+
+        }
+
+        // CP instruction.  Go to subroutine if the sign is positive. (Sign bit is zero).
+        case 0xE4:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if(!(cpu->flags & FLAG_SIGN)){ 
+                PushToStack(cpu, -1);
+                cpu->PC = (high << 8) | low;
+                return 17;
+            }
+            return 11;
+
+        }
+
         default:{
             // printf("Instruction: %X not implemented\n", cpu->instruction);
             break;   
@@ -706,7 +777,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
             *cpu->register_map[destination] = *cpu->register_map[source];
 
             if(source == 0x06){ // Source register is register M
-                // if(((cpu->instruction & 0xF0) == 0x70)) cpu->halt = true;   // TODO: Implement halt when implementing interrupts.
+                if(((cpu->instruction & 0xF0) == 0x70)) cpu->halt = true;
                 return 7; // Moving to the M register takes more cycles.
             } 
             return 5;
