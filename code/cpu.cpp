@@ -1070,6 +1070,46 @@ internal u32 ExecuteInstruction(CPU *cpu){
             return 17;
         }
 
+        // ACI instruction.  Add with carry immediate.
+        case 0xCE:{
+            FetchNextInstructionByte(cpu);
+
+            cpu->A = SumAndSetFlags(cpu, cpu->A, cpu->data_byte + (cpu->flags & FLAG_CARRY), true);
+
+            return 7;
+        }
+
+        // SBI instruction.  Substract with carry immediate.
+        case 0xDE:{
+            FetchNextInstructionByte(cpu);
+
+            cpu->A = SubstractAndSetFlags(cpu, cpu->A, cpu->data_byte + (cpu->flags & FLAG_CARRY), true);
+
+            return 7;
+        }
+
+        // XRI instruction.  XOR acummulator with immediate value.
+        case 0xEE:{
+            FetchNextInstructionByte(cpu);
+
+            UnSetFlag(cpu, FLAG_CARRY);
+            UnSetFlag(cpu, FLAG_AUXCARRY);
+
+            cpu->A = cpu->A ^ cpu->data_byte;
+
+            SetZeroSignParity(cpu, cpu->A);
+            
+            return 7; 
+        }
+
+        // CPI instruction.   Compare with immediate value. Analogue to CMP instruction.
+        case 0xFE:{
+            FetchNextInstructionByte(cpu);
+            SubstractAndSetFlags(cpu, cpu->A, cpu->data_byte, true);
+
+            return 7;
+        }
+
         default:{
             // printf("Instruction: %X not implemented\n", cpu->instruction);
             break;   
