@@ -673,7 +673,8 @@ internal u32 ExecuteInstruction(CPU *cpu){
         }
 
         // JMP instruction.   Jump unconditionally to the immediate address.
-        case 0xC3:{
+        case 0xC3:
+        case 0xCB:{
             FetchNextInstructionByte(cpu);
             u8 low = cpu->data_byte;
             FetchNextInstructionByte(cpu);
@@ -850,6 +851,224 @@ internal u32 ExecuteInstruction(CPU *cpu){
             return 11;
         }
 
+        // RZ instruction.  
+        case 0xC8:{
+            if((cpu->flags & FLAG_ZERO)){ // Return if zero.
+                PopFromStack(cpu, -1);
+                return 11;
+            }else{
+                return 5;
+            }
+        }
+
+        // RC instruction.  
+        case 0xD8:{
+            if((cpu->flags & FLAG_CARRY)){ // Return if the carry is set.
+                PopFromStack(cpu, -1);
+                return 11;
+            }else{
+                return 5;
+            }
+        }
+
+        // RPE instruction.  
+        case 0xE8:{
+            if((cpu->flags & FLAG_PARITY)){ // Return if the parity is even.
+                PopFromStack(cpu, -1);
+                return 11;
+            }else{
+                return 5;
+            }
+        }
+
+        // RM instruction.
+        case 0xF8:{
+            if((cpu->flags & FLAG_SIGN)){ // Return if the sign flag is set.
+                PopFromStack(cpu, -1);
+                return 11;
+            }else{
+                return 5;
+            }
+        }
+
+        // RET instruction.    
+        case 0xC9:
+        case 0xD9:{
+            PopFromStack(cpu, -1);
+            return 10;    
+        }
+
+        // PCHL instruction.  PC.hi <- H; PC.lo <- L
+        case 0xE9:{
+            cpu->PC = cpu->HL;
+
+            return 5;
+        }
+
+        // SPHL instruction.  SP.hi <- H; SP.lo <- L
+        case 0xF9:{
+            cpu->SP = cpu->HL;
+
+            return 5;
+        }
+
+        // JZ instruction. Jump if zero.
+        case 0xCA:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if((cpu->flags & FLAG_ZERO)){ 
+                cpu->PC = (high << 8) | low;
+            }
+            return 10;
+        }
+
+        // JC instruction. Jump if the carry bit is set.
+        case 0xDA:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if((cpu->flags & FLAG_CARRY)){ 
+                cpu->PC = (high << 8) | low;
+            }
+            return 10;
+        }
+
+        // JPE instruction.   Jump if the parity is even.
+        case 0xEA:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if((cpu->flags & FLAG_PARITY)){ 
+                cpu->PC = (high << 8) | low;
+            }
+            return 10;
+        }
+
+        // JM instruction.   Jump if the Sign flag is set.
+        case 0xFA:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if((cpu->flags & FLAG_SIGN)){ 
+                cpu->PC = (high << 8) | low;
+            }
+            return 10;
+        }
+
+
+        // IN instruction.  Read from a device.   
+        // case 0xDB:{ 
+                //// @TODO: Implement.
+
+        //     return 10;
+        // }
+
+
+        // XCHG instruction.   Exchange the contents of registers HL and DE.
+        case 0xEB:{
+            u8 previous_HL = cpu->HL;
+            cpu->HL = cpu->DE;
+            cpu->DE = previous_HL;
+
+            return 5;
+        }
+
+
+        // EI instruction.   Enable interrupts.
+        case 0xFB:{
+            cpu->interrupts_enabled = true;
+
+            return 4;
+        }
+
+        // CZ instruction.  Go to subroutine if the zero bit is set.
+        case 0xCC:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if((cpu->flags & FLAG_ZERO)){ 
+                PushToStack(cpu, -1);
+                cpu->PC = (high << 8) | low;
+                return 17;
+            }
+            return 11;
+
+        }
+
+        // CC instruction.  Go to subroutine if the carry bit is set.
+        case 0xDC:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if((cpu->flags & FLAG_CARRY)){ 
+                PushToStack(cpu, -1);
+                cpu->PC = (high << 8) | low;
+                return 17;
+            }
+            return 11;
+
+        }
+
+        // CPE instruction.  Go to subroutine if the parity is even. (Parity bit is one).
+        case 0xEC:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if((cpu->flags & FLAG_PARITY)){ 
+                PushToStack(cpu, -1);
+                cpu->PC = (high << 8) | low;
+                return 17;
+            }
+            return 11;
+
+        }
+
+        // CM instruction.  Go to subroutine if the sign is negative. (Sign bit is one).
+        case 0xFC:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            if(!(cpu->flags & FLAG_SIGN)){ 
+                PushToStack(cpu, -1);
+                cpu->PC = (high << 8) | low;
+                return 17;
+            }
+            return 11;
+
+        }
+
+
+        // CALL instruction.  Go to subroutine without condition.
+        case 0xCD:
+        case 0xDD:
+        case 0xED:
+        case 0xFD:{
+            FetchNextInstructionByte(cpu);
+            u8 low = cpu->data_byte;
+            FetchNextInstructionByte(cpu);
+            u8 high = cpu->data_byte;
+
+            PushToStack(cpu, -1);
+            cpu->PC = (high << 8) | low;
+            return 17;
+        }
 
         default:{
             // printf("Instruction: %X not implemented\n", cpu->instruction);
