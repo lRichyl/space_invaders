@@ -1,11 +1,23 @@
 
 global_variable Arena arena;
 
-internal u32 RunSpaceInvaders(b32 *is_running){
+internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency){
     local_persist CPU cpu = {};
+    local_persist float frame_time = 1000.0f/60.0f; // In milliseconds.
+    local_persist int cycles_delta = 0;
+    
+    local_persist double cpu_period;
+    local_persist int cycles_per_frame;
     if(!cpu.is_initialized){
         cpu.clock_speed = 2000000; // 2MHz
-        cpu.is_initialized = true;
+
+        cpu_period = 1000.0f/(double)(cpu.clock_speed); // In milliseconds.
+        cycles_per_frame = (int)(frame_time/cpu_period);
+
+        printf("Frame time: %f\n", frame_time);
+        printf("Period: %f\n", cpu_period);
+        printf("Cycles per frame: %d\n", cycles_per_frame);
+        printf("Cycles delta: %d\n", cycles_delta);
 
         cpu.interrupts_enabled = true;
 
@@ -32,15 +44,34 @@ internal u32 RunSpaceInvaders(b32 *is_running){
         cpu.register_map[5] = &cpu.L;
         cpu.register_map[6] = &cpu.memory[cpu.HL];
         cpu.register_map[7] = &cpu.A;
+        
+        cpu.is_initialized = true;
     }
 
-    if(cpu.PC < cpu.rom_size){
-        u32 cycles = ExecuteInstruction(&cpu);
+    while(cycles_delta < cycles_per_frame){
+        if(cpu.PC < cpu.rom_size){
+            cycles_delta += ExecuteInstruction(&cpu);
 
-        return cycles;
+            
+        }
+        else{ // If the program counter goes outside the memory range exit.
+            *is_running = false;
+        }
     }
-    else{
-        *is_running = false;
-        return 0;
+
+    while(1){
+        LARGE_INTEGER end_counter;
+        QueryPerformanceCounter(&end_counter);
+
+        i64 counter_elapsed = end_counter.QuadPart - starting_time.QuadPart; 
+        f32 ms_elapsed     = (f32)((1000.0f*(f32)counter_elapsed) / (f32)perf_count_frequency);
+        if(ms_elapsed >= frame_time){
+            // printf("Milliseconds elapsed: \t%f\n", ms_elapsed);
+            // printf("Cycles ran last frame: \t%d\n", cycles_delta);
+            break;  
+        } 
     }
+
+
+    cycles_delta -= cycles_per_frame;
 }

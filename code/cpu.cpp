@@ -1,6 +1,6 @@
 struct CPU {
     b32 is_initialized;
-    s32 clock_speed;
+    float clock_speed;
 
     union{
         u8 instruction;
@@ -975,7 +975,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
 
         // XCHG instruction.   Exchange the contents of registers HL and DE.
         case 0xEB:{
-            u8 previous_HL = cpu->HL;
+            u16 previous_HL = cpu->HL;
             cpu->HL = cpu->DE;
             cpu->DE = previous_HL;
 

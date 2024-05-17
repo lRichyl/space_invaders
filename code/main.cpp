@@ -20,13 +20,13 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 typedef int8_t  i8;
-typedef int16_t it16;
+typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
 typedef i32 b32;
 
-typedef float s32;
-typedef double s64;
+typedef float f32;
+typedef double f64;
 
 #include <stdio.h>
 #include <string.h>
@@ -35,10 +35,10 @@ typedef double s64;
 #include "arena.cpp"
 #include "file_handling.cpp"
 #include "cpu.cpp"
-#include "space_invaders.cpp"
 
 #include "SDL.h"
 #include <windows.h>
+#include "space_invaders.cpp"
 
 
 int main(int argc, char **argv){
@@ -60,10 +60,7 @@ int main(int argc, char **argv){
         return 0;
     }
 
-    // Arena arena;
-    // init_arena(&arena, 100000);
-    // char *file = text_file_to_string(&arena, "win32_handmade.txt");
-    // printf("%s\n", file);
+    SDL_GL_SetSwapInterval(1);
 
     LARGE_INTEGER perf_count_frequency_result;
     QueryPerformanceFrequency(&perf_count_frequency_result);
@@ -84,25 +81,25 @@ int main(int argc, char **argv){
             }
         }
 
-
-        // @TODO: Implement the timing https://www.reddit.com/r/EmuDev/comments/ksbvgx/how_to_set_clock_speed_in_c/
-        RunSpaceInvaders(&is_running);// Pass cycles delta.
+        RunSpaceInvaders(&is_running, last_counter, perf_count_frequency);
 
         SDL_RenderClear(renderer);
+        // RenderSpaceInvaders();
         SDL_RenderPresent(renderer);
 
         LARGE_INTEGER end_counter;
         QueryPerformanceCounter(&end_counter);
 
         i64 counter_elapsed = end_counter.QuadPart - last_counter.QuadPart; 
-        s32 ms_per_frame    = (s32)((1000.0f*(s32)counter_elapsed) / (s32)perf_count_frequency);
-        s32 fps = (s32)perf_count_frequency/(s32)counter_elapsed;
+        f32 ms_per_frame    = (f32)((1000.0f*(f32)counter_elapsed) / (f32)perf_count_frequency);
+        f32 fps = (f32)perf_count_frequency/(f32)counter_elapsed;
+
 
 
         last_counter = end_counter;
 
         count++;
-        if(count == 10000){
+        if(count == 100){
             count = 1;
             printf("Milliseconds/frame: %.02fms,  %.02fFPS\n", ms_per_frame, fps);
         }
