@@ -25,6 +25,8 @@ internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64
         printf("Cycles delta: %d\n", cycles_delta);
 
         cpu.interrupts_enabled = true;
+        cpu.call_interrupt     = false;
+        cpu.mid_screen_interrupt_handled = false;
 
         // Flags with constant values.
         cpu.flags = cpu.flags | 0x02;    // 1 
@@ -60,7 +62,7 @@ internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64
         cpu.output_devices[1] = 0x00; // Sounds
         cpu.output_devices[2] = 0x00; // Shift data
         cpu.output_devices[3] = 0x00; // More sounds
-        cpu.output_devices[4] = 0x00; // Watchdog. Not necessary for emulation.
+        cpu.output_devices[4] = 0x00; // Watchdog. Not necessary for emulation. Ignored.
 
         cpu.shift_register = 0x00;
         
@@ -70,14 +72,37 @@ internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64
     while(cycles_delta < cycles_per_frame){
         UpdateDevices(&cpu, input);
         if(cpu.PC < cpu.rom_size){
-            SDL_PumpEvents();
-            cycles_delta += ExecuteInstruction(&cpu);
+            if(!cpu.call_interrupt){
+                SDL_PumpEvents();
+                FetchNextInstructionByte(&cpu);
+                cycles_delta += ExecuteInstruction(&cpu);
+            }else{
+                cycles_delta += ExecuteInstruction(&cpu);
+                cpu.call_interrupt = false;
+            }
+
+            if(cpu.interrupts_enabled){
+                if(cycles_delta >= 16667 && !cpu.mid_screen_interrupt_handled){ // Mid screen interrupt.
+                    cpu.instruction = 0xCF; // RST 1
+                    cpu.call_interrupt = true;
+                    cpu.interrupts_enabled = false;
+                    cpu.mid_screen_interrupt_handled = true;
+                }
+            }
         }
         else{ // If the program counter goes outside the memory range exit.
             *is_running = false;
             break;
         }
     }
+
+    // VBLANK interrupt. Always called after 33333 cycles.
+    cpu.instruction = 0xD7; // RST 2
+    cpu.call_interrupt = true;
+    cpu.interrupts_enabled = false;
+
+    cpu.mid_screen_interrupt_handled = false;
+
 
     while(1){// Busy wait.
         LARGE_INTEGER end_counter;
@@ -86,12 +111,11 @@ internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64
         i64 counter_elapsed = end_counter.QuadPart - starting_time.QuadPart; 
         f32 ms_elapsed     = (f32)((1000.0f*(f32)counter_elapsed) / (f32)perf_count_frequency);
         if(ms_elapsed >= frame_time){
-            // printf("Milliseconds elapsed: \t%f\n", ms_elapsed);
+            printf("Milliseconds elapsed: \t%f\n", ms_elapsed);
             // printf("Cycles ran last frame: \t%d\n", cycles_delta);
             break;  
         } 
     }
-
 
     cycles_delta -= cycles_per_frame;
 }

@@ -52,6 +52,8 @@ struct CPU {
     u8  *register_map[8];
 
     b32 interrupts_enabled;
+    b32 call_interrupt;
+    b32 mid_screen_interrupt_handled;
 
     u8 input_devices[INPUT_DEVICES_AMOUNT];
     u8 output_devices[OUTPUT_DEVICES_AMOUNT];
@@ -236,12 +238,9 @@ void UpdateDevices(CPU *cpu, const u8 *input){
 }
 
 internal u32 ExecuteInstruction(CPU *cpu){
-
-    
-
     // This function returns the duration in cycles of the current instruction.
     cpu->M = &cpu->memory[cpu->HL]; // @TODO: Verify this.
-    FetchNextInstructionByte(cpu);
+    // FetchNextInstructionByte(cpu);
 
     if(cpu->halt) return 7;
 
