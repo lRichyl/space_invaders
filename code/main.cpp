@@ -30,13 +30,13 @@ typedef double f64;
 
 #include <stdio.h>
 #include <string.h>
+#include "SDL.h"
 
 #include "defines.h"
 #include "arena.cpp"
 #include "file_handling.cpp"
 #include "cpu.cpp"
 
-#include "SDL.h"
 #include <windows.h>
 #include "space_invaders.cpp"
 
@@ -60,7 +60,7 @@ int main(int argc, char **argv){
         return 0;
     }
 
-    SDL_GL_SetSwapInterval(1);
+    const u8 *input = SDL_GetKeyboardState(NULL);
 
     LARGE_INTEGER perf_count_frequency_result;
     QueryPerformanceFrequency(&perf_count_frequency_result);
@@ -74,6 +74,7 @@ int main(int argc, char **argv){
     b32 is_running = true;
     while (is_running) { // Main loop
         // Input gathering
+        
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
@@ -81,7 +82,7 @@ int main(int argc, char **argv){
             }
         }
 
-        RunSpaceInvaders(&is_running, last_counter, perf_count_frequency);
+        RunSpaceInvaders(&is_running, last_counter, perf_count_frequency, input);
 
         SDL_RenderClear(renderer);
         // RenderSpaceInvaders();

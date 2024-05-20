@@ -1,8 +1,13 @@
+struct Input{
+
+};
 
 global_variable Arena arena;
 
-internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency){
+internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input){
     local_persist CPU cpu = {};
+
+    // Put this variables in a struct.
     local_persist float frame_time = 1000.0f/60.0f; // In milliseconds.
     local_persist int cycles_delta = 0;
     
@@ -44,22 +49,37 @@ internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64
         cpu.register_map[5] = &cpu.L;
         cpu.register_map[6] = &cpu.memory[cpu.HL];
         cpu.register_map[7] = &cpu.A;
+
+        // Initialize the Input/Output devices.
+        cpu.input_devices[0] = 0x0E;
+        cpu.input_devices[1] = 0x08;
+        cpu.input_devices[2] = 0x00;
+        cpu.input_devices[3] = 0x00; 
+
+        cpu.output_devices[0] = 0x00; // Shift amount
+        cpu.output_devices[1] = 0x00; // Sounds
+        cpu.output_devices[2] = 0x00; // Shift data
+        cpu.output_devices[3] = 0x00; // More sounds
+        cpu.output_devices[4] = 0x00; // Watchdog. Not necessary for emulation.
+
+        cpu.shift_register = 0x00;
         
         cpu.is_initialized = true;
     }
 
     while(cycles_delta < cycles_per_frame){
+        UpdateDevices(&cpu, input);
         if(cpu.PC < cpu.rom_size){
+            SDL_PumpEvents();
             cycles_delta += ExecuteInstruction(&cpu);
-
-            
         }
         else{ // If the program counter goes outside the memory range exit.
             *is_running = false;
+            break;
         }
     }
 
-    while(1){
+    while(1){// Busy wait.
         LARGE_INTEGER end_counter;
         QueryPerformanceCounter(&end_counter);
 

@@ -1,3 +1,6 @@
+#define INPUT_DEVICES_AMOUNT 4 
+#define OUTPUT_DEVICES_AMOUNT 5 
+
 struct CPU {
     b32 is_initialized;
     float clock_speed;
@@ -49,6 +52,10 @@ struct CPU {
     u8  *register_map[8];
 
     b32 interrupts_enabled;
+
+    u8 input_devices[INPUT_DEVICES_AMOUNT];
+    u8 output_devices[OUTPUT_DEVICES_AMOUNT];
+    u16 shift_register;
 
     u32 rom_size; // For testing.
 };
@@ -191,7 +198,47 @@ internal u8 SubstractAndSetFlags(CPU *cpu, u8 minuend, u8 sustrahend, b32 check_
     return result;
 }
 
+void UpdateDevices(CPU *cpu, const u8 *input){
+    // ------------------------------Inputs-------------------------------
+    // Port 0, Fire, Left and Right bits.
+    input[SDL_SCANCODE_RCTRL]   ? cpu->input_devices[0] |= 0x10  : cpu->input_devices[0] &= (~0x10);
+    input[SDL_SCANCODE_LEFT]    ? cpu->input_devices[0] |= 0x20  : cpu->input_devices[0] &= (~0x20);
+    input[SDL_SCANCODE_RIGHT]   ? cpu->input_devices[0] |= 0x40  : cpu->input_devices[0] &= (~0x40);
+
+    // Port 1, 
+    input[SDL_SCANCODE_Z]       ? cpu->input_devices[1] |= 0x01  : cpu->input_devices[1] &= (~0x01); // Add credit
+    input[SDL_SCANCODE_RSHIFT]  ? cpu->input_devices[1] |= 0x02  : cpu->input_devices[1] &= (~0x02); // Player 2 start
+    input[SDL_SCANCODE_RETURN]  ? cpu->input_devices[1] |= 0x04  : cpu->input_devices[1] &= (~0x04); // Player 1 start
+    // Player 1 inputs
+    input[SDL_SCANCODE_RCTRL]   ? cpu->input_devices[1] |= 0x10  : cpu->input_devices[1] &= (~0x10); 
+    input[SDL_SCANCODE_LEFT]    ? cpu->input_devices[1] |= 0x20  : cpu->input_devices[1] &= (~0x20);
+    input[SDL_SCANCODE_RIGHT]   ? cpu->input_devices[1] |= 0x40  : cpu->input_devices[1] &= (~0x40);
+
+    // Port 2
+    // Player 2 inputs
+    input[SDL_SCANCODE_SPACE] ? cpu->input_devices[2] |= 0x10  : cpu->input_devices[2] &= (~0x10); 
+    input[SDL_SCANCODE_A]     ? cpu->input_devices[2] |= 0x20  : cpu->input_devices[2] &= (~0x20);
+    input[SDL_SCANCODE_D]     ? cpu->input_devices[2] |= 0x40  : cpu->input_devices[2] &= (~0x40);
+
+    
+    // Port 3
+
+    // ------------------------------Outputs-------------------------------
+    // Ports 2 is set directly with the OUT instruction. Does not require extra processing.
+    // Port 2 Shift amount.
+
+    // Ports 3 and 5 are for playing sounds. // @TODO: Implement.
+    // Port 3 sounds
+    // Port 5 sounds
+
+    
+
+}
+
 internal u32 ExecuteInstruction(CPU *cpu){
+
+    
+
     // This function returns the duration in cycles of the current instruction.
     cpu->M = &cpu->memory[cpu->HL]; // @TODO: Verify this.
     FetchNextInstructionByte(cpu);
@@ -685,12 +732,22 @@ internal u32 ExecuteInstruction(CPU *cpu){
             return 10;
         }
 
-        // // OUT instruction. Send the byte stored in the accumulator to device number [d8]. 
-        // case 0xD3:{
-                // @TODO: Implement.
+        // OUT instruction. Send the byte stored in the accumulator to device number [d8]. 
+        case 0xD3:{
+                FetchNextInstructionByte(cpu);
+                assert(cpu->data_byte < OUTPUT_DEVICES_AMOUNT + 2 && cpu->data_byte > 1);
+                cpu->output_devices[cpu->data_byte - 2] = cpu->A; // Space invader ouput devices start at #2.
 
-        //     return 10;
-        // }
+                // Port 4. Shift data.
+                if(cpu->data_byte == 4){
+                    cpu->shift_register = cpu->shift_register >> 8;
+                    cpu->shift_register = cpu->shift_register | (cpu->output_devices[2] << 8);
+                    cpu->input_devices[3] = (cpu->shift_register >> (8 - cpu->output_devices[0]));
+                }
+                
+
+            return 10;
+        }
 
 
         // XTHL instruction.  Exchange stack.
@@ -966,11 +1023,12 @@ internal u32 ExecuteInstruction(CPU *cpu){
 
 
         // IN instruction.  Read from a device.   
-        // case 0xDB:{ 
-                //// @TODO: Implement.
-
-        //     return 10;
-        // }
+        case 0xDB:{ 
+                FetchNextInstructionByte(cpu);
+                assert(cpu->data_byte < INPUT_DEVICES_AMOUNT);
+                cpu->A = cpu->input_devices[cpu->data_byte];
+            return 10;
+        }
 
 
         // XCHG instruction.   Exchange the contents of registers HL and DE.
@@ -1102,7 +1160,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
             return 7; 
         }
 
-        // CPI instruction.   Compare with immediate value. Analogue to CMP instruction.
+        // CPI instruction.   Compare with immediate value. Analogue to instruction.
         case 0xFE:{
             FetchNextInstructionByte(cpu);
             SubstractAndSetFlags(cpu, cpu->A, cpu->data_byte, true);
