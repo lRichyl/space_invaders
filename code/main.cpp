@@ -1,6 +1,8 @@
 // Space invaders aspect ratio.
-#define WINDOW_WIDTH  875
-#define WINDOW_HEIGHT 1000
+#define WINDOW_WIDTH  224 // 875
+#define WINDOW_HEIGHT 256 // 1000
+#define GAME_WIDTH  WINDOW_HEIGHT
+#define GAME_HEIGHT WINDOW_WIDTH
 
 #define internal static
 #define local_persist static
@@ -48,7 +50,7 @@ int main(int argc, char **argv){
     }
 
     // SDL_Window *window;
-    SDL_Window *window = SDL_CreateWindow("Hola", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
+    SDL_Window *window = SDL_CreateWindow("Hola", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, GAME_WIDTH, GAME_HEIGHT, SDL_WINDOW_OPENGL);
     if (!window) {
         printf("Error creating the window: %s", SDL_GetError());
         return 0;
@@ -81,11 +83,10 @@ int main(int argc, char **argv){
                 is_running = false;
             }
         }
+      //  SDL_RenderClear(renderer);
 
-        RunSpaceInvaders(&is_running, last_counter, perf_count_frequency, input);
+        RunSpaceInvaders(&is_running, last_counter, perf_count_frequency, input, renderer);
 
-        SDL_RenderClear(renderer);
-        // RenderSpaceInvaders();
         SDL_RenderPresent(renderer);
 
         LARGE_INTEGER end_counter;
@@ -99,16 +100,16 @@ int main(int argc, char **argv){
 
         last_counter = end_counter;
 
-        count++;
-        if(count == 100){
-            count = 1;
-            printf("Milliseconds/frame: %.02fms,  %.02fFPS\n", ms_per_frame, fps);
-        }
+        // count++;
+        // if(count == 100){
+        //     count = 1;
+        //     printf("Milliseconds/frame: %.02fms,  %.02fFPS\n", ms_per_frame, fps);
+        // }
     }
 
-    SDL_Quit();
-    SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    SDL_DestroyRenderer(renderer);
+    SDL_Quit();
 
     return 0;
 }

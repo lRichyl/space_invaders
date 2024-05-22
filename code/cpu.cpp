@@ -39,7 +39,7 @@ struct CPU {
             u8 A; // Accumulator
         };
     };
-    u8 *M; // Pseudo register that contains the dereferenced memory pointed by HL.
+    u8 M; // Pseudo register that contains the dereferenced memory pointed by HL.
     b32 halt;
 
     u16 SP; // Stack pointer
@@ -59,6 +59,8 @@ struct CPU {
     u8 output_devices[OUTPUT_DEVICES_AMOUNT];
     u16 shift_register;
 
+
+    u32 instruction_size;
     u32 rom_size; // For testing.
 };
 
@@ -79,7 +81,9 @@ internal void UnSetFlag(CPU *cpu, Flag flag){
 }
 
 internal void FetchNextInstructionByte(CPU *cpu){
+    cpu->instruction_size++;
     cpu->instruction = cpu->memory[cpu->PC];
+    // printf("PC: %X\tInstruction: %X \t  %X\n",cpu->PC, cpu->instruction, cpu->memory[0x20C0]);
     cpu->PC++;
 }
 
@@ -111,7 +115,7 @@ void PopFromStack(CPU *cpu, i32 register_pair_index){
         first  = cpu->memory[cpu->SP + 1];
 
         cpu->PC = (first << 8) | second;
-        cpu->PC++;
+        // cpu->PC++;
     }else if(register_pair_index <= 2){
         second = cpu->memory[cpu->SP];
         first  = cpu->memory[cpu->SP + 1];
@@ -238,11 +242,11 @@ void UpdateDevices(CPU *cpu, const u8 *input){
 }
 
 internal u32 ExecuteInstruction(CPU *cpu){
+    cpu->instruction_size = 0;
     // This function returns the duration in cycles of the current instruction.
-    cpu->M = &cpu->memory[cpu->HL]; // @TODO: Verify this.
-    // FetchNextInstructionByte(cpu);
 
-    if(cpu->halt) return 7;
+    //cpu->M = cpu->memory[cpu->HL]; // @TODO: Verify this.
+    // FetchNextInstructionByte(cpu);
 
     switch(cpu->instruction){
         case 0x00:// NOP Instruction.
@@ -270,6 +274,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
             u8 high = cpu->data_byte;
             
             *cpu->wide_register_map[register_pair_index] = ((high << 8) | low);
+            if(register_pair_index == 2) cpu->M = cpu->memory[cpu->HL];
             return 10;
         }
         case 0x31:{ // LXI Instruction, storing in the stack pointer.
@@ -325,6 +330,8 @@ internal u32 ExecuteInstruction(CPU *cpu){
             u8 register_pair_index = (cpu->instruction & 0xF0) >> 4;
             (*cpu->wide_register_map[register_pair_index])++;
 
+            if(register_pair_index == 2) cpu->M = cpu->memory[cpu->HL];
+
             return 5;
         }
 
@@ -342,13 +349,15 @@ internal u32 ExecuteInstruction(CPU *cpu){
             u8 register_index = ((cpu->instruction & 0xF0) >> 4) * 2;
             *cpu->register_map[register_index] = SumAndSetFlags(cpu, *cpu->register_map[register_index], 1);
 
+            if(register_index == 4) cpu->M = cpu->memory[cpu->HL];
+
             return 5;
         }
 
         // INR Instruction.  INR M  :  Z, S, P, AC   :  M <- M+1
         case 0x34:{
-            *cpu->M = SumAndSetFlags(cpu, *cpu->M, 1);
-
+            cpu->M = SumAndSetFlags(cpu, cpu->M, 1);
+            cpu->memory[cpu->HL] = cpu->M;
             return 10;
         }
 
@@ -359,13 +368,14 @@ internal u32 ExecuteInstruction(CPU *cpu){
             u8 register_index = ((cpu->instruction & 0xF0) >> 4) * 2;
             *cpu->register_map[register_index] = SubstractAndSetFlags(cpu, *cpu->register_map[register_index], 1);
 
+            if(register_index == 4) cpu->M = cpu->memory[cpu->HL];
             return 5;
         }
 
         // DCR Instruction.  DCR M  :  Z, S, P, AC   :  M <- M-1 
         case 0x35:{
-            *cpu->M = SubstractAndSetFlags(cpu, *cpu->M, 1);
-
+            cpu->M = SubstractAndSetFlags(cpu, cpu->M, 1);
+            cpu->memory[cpu->HL] = cpu->M;
             return 10;
         }
 
@@ -377,15 +387,15 @@ internal u32 ExecuteInstruction(CPU *cpu){
             FetchNextInstructionByte(cpu);
             *cpu->register_map[register_index] = cpu->data_byte;
 
-
+            if(register_index == 4) cpu->M = cpu->memory[cpu->HL];
             return 7;
         }
 
         // MVI Instruction.  MVI M, D8  :  M <- byte 2
         case 0x36:{ 
             FetchNextInstructionByte(cpu);
-            *cpu->M = cpu->data_byte;
-
+            cpu->M = cpu->data_byte;
+            cpu->memory[cpu->HL] = cpu->M;
             return 10;
         }
 
@@ -470,6 +480,8 @@ internal u32 ExecuteInstruction(CPU *cpu){
             else
                 UnSetFlag(cpu, FLAG_CARRY);
 
+            if(register_pair_index == 2) cpu->M = cpu->memory[cpu->HL];
+
             return 10;
         }
 
@@ -506,6 +518,8 @@ internal u32 ExecuteInstruction(CPU *cpu){
             cpu->L = cpu->memory[address];
             cpu->H = cpu->memory[address + 1];
 
+            cpu->M = cpu->memory[cpu->HL];
+
             return 16;
         }
 
@@ -530,6 +544,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
             u8 register_pair_index = (cpu->instruction & 0xF0) >> 4;
             (*cpu->wide_register_map[register_pair_index])--;
 
+            if(register_pair_index == 2) cpu->M = cpu->memory[cpu->HL];
             return 5;
         }
 
@@ -547,6 +562,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
             u8 register_index = (((cpu->instruction & 0xF0) >> 4) * 2) + 1;
             *cpu->register_map[register_index] = SumAndSetFlags(cpu, *cpu->register_map[register_index], 1);
 
+            if(register_index == 5) cpu->M = cpu->memory[cpu->HL];
             return 5;
         }    
 
@@ -559,6 +575,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
             u8 register_index = (((cpu->instruction & 0xF0) >> 4) * 2) + 1;
             *cpu->register_map[register_index] = SubstractAndSetFlags(cpu, *cpu->register_map[register_index], 1);
 
+            if(register_index == 5) cpu->M = cpu->memory[cpu->HL];
             return 5;
         }
 
@@ -572,6 +589,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
             FetchNextInstructionByte(cpu);
             *cpu->register_map[register_index] = cpu->data_byte;
 
+            if(register_index == 5) cpu->M = cpu->memory[cpu->HL];
             return 7;
         }
 
@@ -663,6 +681,9 @@ internal u32 ExecuteInstruction(CPU *cpu){
             u8 register_pair_index = (cpu->instruction & 0x30) >> 4;
             PopFromStack(cpu, register_pair_index);
 
+            
+            if(register_pair_index == 2) cpu->M = cpu->memory[cpu->HL];
+            
             return 10;
         }
 
@@ -758,6 +779,8 @@ internal u32 ExecuteInstruction(CPU *cpu){
             u8 previous_H = cpu->H;
             cpu->H = cpu->memory[cpu->SP + 1];
             cpu->memory[cpu->SP + 1] = previous_H;
+
+            cpu->M = cpu->memory[cpu->HL];
 
             return 18;
         }
@@ -1036,6 +1059,8 @@ internal u32 ExecuteInstruction(CPU *cpu){
             cpu->HL = cpu->DE;
             cpu->DE = previous_HL;
 
+            cpu->M = cpu->memory[cpu->HL];
+
             return 5;
         }
 
@@ -1167,10 +1192,10 @@ internal u32 ExecuteInstruction(CPU *cpu){
             return 7;
         }
 
-        default:{
+        // default:{
             // printf("Instruction: %X not implemented\n", cpu->instruction);
-            break;   
-        }
+            // break;   
+        // }
     }
 
 
@@ -1185,10 +1210,16 @@ internal u32 ExecuteInstruction(CPU *cpu){
 
             *cpu->register_map[destination] = *cpu->register_map[source];
 
-            if(source == 0x06){ // Source register is register M
-                if(((cpu->instruction & 0xF0) == 0x70)) cpu->halt = true;
-                return 7; // Moving to the M register takes more cycles.
-            } 
+            if(destination == 0x06){
+            cpu->memory[cpu->HL] = cpu->M;
+                if(source == 0x06){
+                    cpu->halt = true;
+                    return 7; // Moving to the M register takes more cycles.
+                }
+            }else if(destination == 0x04 || destination == 0x05){
+                cpu->M = cpu->memory[cpu->HL];
+            }
+             
             return 5;
         }
 
@@ -1282,8 +1313,10 @@ internal u32 ExecuteInstruction(CPU *cpu){
             return 4;
         }
 
-        default:
-            break;
+        default:{
+            printf("Instruction: %X not implemented\n", cpu->instruction);
+            break;   
+        }
     }
 
 
