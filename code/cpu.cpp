@@ -72,16 +72,16 @@ enum Flag {
     FLAG_SIGN     = 0x80
 };
 
-internal void SetFlag(CPU *cpu, Flag flag){
+static void SetFlag(CPU *cpu, Flag flag){
     cpu->flags = cpu->flags | flag;
 }
 
-internal void UnSetFlag(CPU *cpu, Flag flag){
+static void UnSetFlag(CPU *cpu, Flag flag){
     cpu->flags = cpu->flags & ~(flag);
 }
 
 
-internal void FetchNextInstructionByte(CPU *cpu){
+static void FetchNextInstructionByte(CPU *cpu){
     cpu->instruction_size++;
     cpu->instruction = cpu->memory[cpu->PC];
     fprintf(file, "PC: %X\tInstruction: %X \t  %X\n",cpu->PC, cpu->instruction, cpu->memory[0x20C0]);
@@ -130,7 +130,7 @@ void PopFromStack(CPU *cpu, i32 register_pair_index){
     cpu->SP += 2;
 }
 
-internal bool CheckParityBits(u8 byte){
+static bool CheckParityBits(u8 byte){
     i32 count = 0;
 
         // Count the set bits using Kernighan's Algorithm
@@ -143,7 +143,7 @@ internal bool CheckParityBits(u8 byte){
         return (count % 2 == 0);
 }
 
-internal void SetZeroSignParity(CPU *cpu, u8 value){
+static void SetZeroSignParity(CPU *cpu, u8 value){
     if(value == 0)     
         SetFlag(cpu, FLAG_ZERO);
     else
@@ -160,7 +160,7 @@ internal void SetZeroSignParity(CPU *cpu, u8 value){
         UnSetFlag(cpu, FLAG_PARITY);
 }
 
-internal u8 SumAndSetFlags(CPU *cpu, u8 summand_left, u8 summand_right, b32 check_carry = false){
+static u8 SumAndSetFlags(CPU *cpu, u8 summand_left, u8 summand_right, b32 check_carry = false){
     u16 result = (u16)summand_left + (u16)summand_right;
     
     SetZeroSignParity(cpu, (u8)result);
@@ -182,7 +182,7 @@ internal u8 SumAndSetFlags(CPU *cpu, u8 summand_left, u8 summand_right, b32 chec
     return (u8)result;
 }
 
-internal u8 SubstractAndSetFlags(CPU *cpu, u8 minuend, u8 sustrahend, b32 check_carry = false){
+static u8 SubstractAndSetFlags(CPU *cpu, u8 minuend, u8 sustrahend, b32 check_carry = false){
     u8 result = minuend - sustrahend;
     
     SetZeroSignParity(cpu, result);
@@ -242,7 +242,7 @@ void UpdateDevices(CPU *cpu, const u8 *input){
 
 }
 
-internal u32 ExecuteInstruction(CPU *cpu){
+static u32 ExecuteInstruction(CPU *cpu){
     cpu->instruction_size = 0;
     // This function returns the duration in cycles of the current instruction.
 

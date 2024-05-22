@@ -1,8 +1,8 @@
 
 
-global_variable Arena arena;
+static Arena arena;
 
-// internal void RenderSpaceInvaders(CPU *cpu, SDL_Renderer *renderer, SDL_Texture *game_texture){
+// static void RenderSpaceInvaders(CPU *cpu, SDL_Renderer *renderer, SDL_Texture *game_texture){
 //     u8 *pixels;
 //     int pitch;
 //     u16 vram_address = 0x2400;
@@ -81,7 +81,7 @@ void RenderSpaceInvaders(CPU *cpu, SDL_Renderer *renderer, SDL_Texture *game_tex
     SDL_RenderCopyEx(renderer, game_texture, NULL, &dst_rect, angle, NULL, flip);
 }
 
-internal void PrintCPUInfo(CPU *cpu){
+static void PrintCPUInfo(CPU *cpu){
     bool sign   = cpu->flags & FLAG_SIGN;
     bool zero   = cpu->flags & FLAG_ZERO;
     bool half   = cpu->flags & FLAG_AUXCARRY;
@@ -91,16 +91,16 @@ internal void PrintCPUInfo(CPU *cpu){
     fprintf(file, "A: %X\tBC: %X\tDE: %X\tHL: %X\tSP: %X\tS%X\tZ%X\tA%X\tP%X\tC%X\t\n\n", cpu->A, cpu->BC, cpu->DE, cpu->HL, cpu->SP, sign, zero, half, parity, carry);
 }
 
-internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input, SDL_Renderer *renderer){
-    local_persist SDL_Texture *game_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, GAME_WIDTH, GAME_HEIGHT);
-    local_persist CPU cpu = {};
+static void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input, SDL_Renderer *renderer){
+    static SDL_Texture *game_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, GAME_WIDTH, GAME_HEIGHT);
+    static CPU cpu = {};
 
     // Put this variables in a struct.
-    local_persist float frame_time = 1000.0f/60.0f; // In milliseconds.
-    local_persist int cycles_delta = 0;
+    static float frame_time = 1000.0f/60.0f; // In milliseconds.
+    static int cycles_delta = 0;
     
-    local_persist double cpu_period;
-    local_persist int cycles_per_frame;
+    static double cpu_period;
+    static int cycles_per_frame;
     if(!cpu.is_initialized){
         cpu.clock_speed = 2000000; // 2MHz
 

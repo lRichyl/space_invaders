@@ -9,7 +9,7 @@ typedef struct {
 } Arena;
 
 // Initialize the arena
-internal void init_arena(Arena *arena, unsigned int size) {
+static void init_arena(Arena *arena, unsigned int size) {
     if(!arena->initialized){
         arena->start = (char*)malloc(size);
         arena->current = arena->start;
@@ -19,7 +19,7 @@ internal void init_arena(Arena *arena, unsigned int size) {
 }
 
 // Allocate memory from the arena
-internal void* arena_alloc(Arena *arena, unsigned int size) {
+static void* arena_alloc(Arena *arena, unsigned int size) {
     Assert(arena->initialized);
 
     if (arena->current + size <= arena->start + arena->size) {
@@ -35,7 +35,7 @@ internal void* arena_alloc(Arena *arena, unsigned int size) {
 }
 
 // Free the entire arena
-internal void free_arena(Arena *arena) {
+static void free_arena(Arena *arena) {
     Assert(arena->initialized);
     free(arena->start);
     arena->start = arena->current = NULL;

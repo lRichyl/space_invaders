@@ -4,9 +4,6 @@
 #define GAME_WIDTH  WINDOW_HEIGHT
 #define GAME_HEIGHT WINDOW_WIDTH
 
-#define internal static
-#define local_persist static
-#define global_variable static
 
 #if BUILD_SLOW
 #define assert(Expression) if(!(Expression)) {*(int *)0 = 0;}

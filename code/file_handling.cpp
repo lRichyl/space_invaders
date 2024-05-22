@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-internal char* text_file_to_string(Arena *arena, const char* file_name){
+static char* text_file_to_string(Arena *arena, const char* file_name){
 	FILE *fp;
 	long file_size;
 	// char *buffer;
@@ -40,7 +40,7 @@ internal char* text_file_to_string(Arena *arena, const char* file_name){
     return buffer;
 }
 
-internal u8* load_binary_file(Arena *arena, const char* file_name, u32 *file_size){
+static u8* load_binary_file(Arena *arena, const char* file_name, u32 *file_size){
     FILE *fp;
 
     fopen_s(&fp, file_name , "rb" );
@@ -74,7 +74,7 @@ internal u8* load_binary_file(Arena *arena, const char* file_name, u32 *file_siz
     return buffer;
 }
 
-internal bool file_exists(const char * filename)
+static bool file_exists(const char * filename)
 {
     FILE *file = NULL;
     fopen_s(&file, filename, "r");
