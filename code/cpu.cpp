@@ -80,10 +80,11 @@ internal void UnSetFlag(CPU *cpu, Flag flag){
     cpu->flags = cpu->flags & ~(flag);
 }
 
+
 internal void FetchNextInstructionByte(CPU *cpu){
     cpu->instruction_size++;
     cpu->instruction = cpu->memory[cpu->PC];
-    // printf("PC: %X\tInstruction: %X \t  %X\n",cpu->PC, cpu->instruction, cpu->memory[0x20C0]);
+    fprintf(file, "PC: %X\tInstruction: %X \t  %X\n",cpu->PC, cpu->instruction, cpu->memory[0x20C0]);
     cpu->PC++;
 }
 
@@ -257,7 +258,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
         case 0x18:
         case 0x28:
         case 0x38: {
-            printf("NOP instruction\n");
+            fprintf(file, "NOP instruction\n");
 
             return 4; // Duration in cycles.
         }
@@ -480,7 +481,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
             else
                 UnSetFlag(cpu, FLAG_CARRY);
 
-            if(register_pair_index == 2) cpu->M = cpu->memory[cpu->HL];
+            cpu->M = cpu->memory[cpu->HL];
 
             return 10;
         }
@@ -904,6 +905,7 @@ internal u32 ExecuteInstruction(CPU *cpu){
 
         // ORI instruction.   ORI D8  :  A <- A | D8
         case 0xF6:{
+            FetchNextInstructionByte(cpu);
             UnSetFlag(cpu, FLAG_CARRY);
             UnSetFlag(cpu, FLAG_AUXCARRY);
 

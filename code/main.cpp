@@ -30,10 +30,12 @@ typedef i32 b32;
 typedef float f32;
 typedef double f64;
 
+
 #include <stdio.h>
 #include <string.h>
 #include "SDL.h"
 
+FILE *file;
 #include "defines.h"
 #include "arena.cpp"
 #include "file_handling.cpp"
@@ -43,7 +45,9 @@ typedef double f64;
 #include "space_invaders.cpp"
 
 
+
 int main(int argc, char **argv){
+    file = fopen("test.txt", "w");
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         printf("SDL2 Initialization failed: %s", SDL_GetError());
         return 0;
@@ -110,6 +114,6 @@ int main(int argc, char **argv){
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
-
+    fclose(file);
     return 0;
 }

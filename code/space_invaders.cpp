@@ -69,13 +69,16 @@ void RenderSpaceInvaders(CPU *cpu, SDL_Renderer *renderer, SDL_Texture *game_tex
         }
     }
 
+    
+
     SDL_UnlockTexture(game_texture);
     // SDL_RenderCopy(renderer, game_texture, NULL, NULL);
     SDL_Rect src_rect = { 0, 0, GAME_WIDTH, GAME_HEIGHT };
-    SDL_Rect dst_rect = { 0, 0, GAME_HEIGHT, GAME_WIDTH }; // Swapped width and height for rotation
-    double angle = -90; // 90 degrees counterclockwise rotation
+    SDL_Rect dst_rect = { 0, -40, GAME_WIDTH, GAME_HEIGHT }; // Swapped width and height for rotation
+    double angle = 90; // 90 degrees counterclockwise rotation
+    SDL_RendererFlip flip = (SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL);
 
-    SDL_RenderCopyEx(renderer, game_texture, &src_rect, &dst_rect, angle, NULL, SDL_FLIP_NONE);
+    SDL_RenderCopyEx(renderer, game_texture, NULL, &dst_rect, angle, NULL, flip);
 }
 
 internal void PrintCPUInfo(CPU *cpu){
@@ -85,7 +88,7 @@ internal void PrintCPUInfo(CPU *cpu){
     bool parity = cpu->flags & FLAG_PARITY;
     bool carry  = cpu->flags & FLAG_CARRY;
 
-    printf("A: %X\tBC: %X\tDE: %X\tHL: %X\tSP: %X\tS%X\tZ%X\tA%X\tP%X\tC%X\t\n\n", cpu->A, cpu->BC, cpu->DE, cpu->HL, cpu->SP, sign, zero, half, parity, carry);
+    fprintf(file, "A: %X\tBC: %X\tDE: %X\tHL: %X\tSP: %X\tS%X\tZ%X\tA%X\tP%X\tC%X\t\n\n", cpu->A, cpu->BC, cpu->DE, cpu->HL, cpu->SP, sign, zero, half, parity, carry);
 }
 
 internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input, SDL_Renderer *renderer){
@@ -155,9 +158,10 @@ internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64
     }
 
     while(cycles_delta < cycles_per_frame){
-        u8 previous = cpu.memory[0x90];
         UpdateDevices(&cpu, input);
+        u8 previous;
         if(cpu.PC < cpu.rom_size){
+            previous = cpu.memory[0x90];
             if(!cpu.call_interrupt){
                 SDL_PumpEvents();
 
@@ -185,7 +189,7 @@ internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64
             return;
         }
 
-        // PrintCPUInfo(&cpu);
+        PrintCPUInfo(&cpu);
     }
 
     // VBLANK interrupt. Always called after 33333 cycles.
@@ -195,10 +199,6 @@ internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64
 
     cpu.mid_screen_interrupt_handled = false;
 
-    local_persist i32 count = 0;
-    if(count >= 1000){
-        count = 0;
-    }
     while(1){// Busy wait.
         LARGE_INTEGER end_counter;
         QueryPerformanceCounter(&end_counter);
@@ -217,10 +217,4 @@ internal void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64
 
 
     RenderSpaceInvaders(&cpu, renderer, game_texture);
-    count++;
-    if(count == 60){
-        count = 0;
-        printf("%X\n", cpu.memory[0x20C0]);
-        printf("A\n");
-    }
 }
