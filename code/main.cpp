@@ -11,6 +11,8 @@
 #define assert(Expression)
 #endif
 
+#define ArraySize(array) (sizeof(array) / sizeof((array)[0]))
+
 #include <stdint.h>
 
 typedef uint8_t u8;
@@ -31,11 +33,13 @@ typedef double f64;
 #include <stdio.h>
 #include <string.h>
 #include "SDL.h"
+#include "SDL_mixer.h"
 
 FILE *file;
 #include "defines.h"
 #include "arena.cpp"
 #include "file_handling.cpp"
+#include "sound.cpp"
 #include "cpu.cpp"
 
 #include <windows.h>
@@ -45,13 +49,18 @@ FILE *file;
 
 int main(int argc, char **argv){
     file = fopen("test.txt", "w");
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO) < 0) {
         printf("SDL2 Initialization failed: %s", SDL_GetError());
         return 0;
     }
 
+    if( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 2048 ) < 0 ){
+        printf( "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError() );
+        return 0;
+    }
+
     // SDL_Window *window;
-    SDL_Window *window = SDL_CreateWindow("Hola", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, GAME_WIDTH, GAME_HEIGHT, SDL_WINDOW_OPENGL);
+    SDL_Window *window = SDL_CreateWindow("Space Invaders", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, GAME_WIDTH, GAME_HEIGHT, SDL_WINDOW_OPENGL);
     if (!window) {
         printf("Error creating the window: %s", SDL_GetError());
         return 0;
@@ -111,6 +120,7 @@ int main(int argc, char **argv){
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
+    Mix_Quit();
     fclose(file);
     return 0;
 }

@@ -57,12 +57,15 @@ struct CPU {
 
     u8 input_devices[INPUT_DEVICES_AMOUNT];
     u8 output_devices[OUTPUT_DEVICES_AMOUNT];
+    u8 previous_output_devices[OUTPUT_DEVICES_AMOUNT]; 
+
     u16 shift_register;
 
 
     u32 instruction_size;
     u32 rom_size; // For testing.
 };
+
 
 enum Flag {
     FLAG_CARRY    = 0x01,
@@ -205,7 +208,7 @@ static u8 SubstractAndSetFlags(CPU *cpu, u8 minuend, u8 sustrahend, b32 check_ca
     return result;
 }
 
-void UpdateDevices(CPU *cpu, const u8 *input){
+void UpdateDevices(CPU *cpu, const u8 *input, SoundState *sound_state){
     // ------------------------------Inputs-------------------------------
     // Port 0, Fire, Left and Right bits.
     input[SDL_SCANCODE_RCTRL]   ? cpu->input_devices[0] |= 0x10  : cpu->input_devices[0] &= (~0x10);
@@ -234,11 +237,47 @@ void UpdateDevices(CPU *cpu, const u8 *input){
     // Ports 2 is set directly with the OUT instruction. Does not require extra processing.
     // Port 2 Shift amount.
 
-    // Ports 3 and 5 are for playing sounds. // @TODO: Implement.
+    // Ports 3 and 5 are for playing sounds.
     // Port 3 sounds
+    if(cpu->output_devices[1] & 0x01 && !(cpu->previous_output_devices[1] & 0x01)){ // UFO sound.
+        Mix_PlayChannel(-1, sound_state->ufo, 0);
+    }
+
+    if(cpu->output_devices[1] & 0x02 && !(cpu->previous_output_devices[1] & 0x02)){ // Shooting sound.
+        Mix_PlayChannel(-1, sound_state->shot, 0);
+    }
+
+    if(cpu->output_devices[1] & 0x04 && !(cpu->previous_output_devices[1] & 0x04)){ // Player dying sound.
+        Mix_PlayChannel(-1, sound_state->player_die, 0);
+    }
+
+    if(cpu->output_devices[1] & 0x08 && !(cpu->previous_output_devices[1] & 0x08)){ // Invader dying sound.
+        Mix_PlayChannel(-1, sound_state->invader_die, 0);
+    }
+
     // Port 5 sounds
 
-    
+    if(cpu->output_devices[3] & 0x01 && !(cpu->previous_output_devices[3] & 0x01)){ // Fleet 1 sound.
+        Mix_PlayChannel(-1, sound_state->fleet_1, 0);
+    }
+
+    if(cpu->output_devices[3] & 0x02 && !(cpu->previous_output_devices[3] & 0x02)){ // Fleet 2 sound.
+        Mix_PlayChannel(-1, sound_state->fleet_2, 0);
+    }
+
+    if(cpu->output_devices[3] & 0x04 && !(cpu->previous_output_devices[3] & 0x04)){ // Fleet 3 sound.
+        Mix_PlayChannel(-1, sound_state->fleet_3, 0);
+    }
+
+    if(cpu->output_devices[3] & 0x08 && !(cpu->previous_output_devices[3] & 0x08)){ // Fleet 4 sound.
+        Mix_PlayChannel(-1, sound_state->fleet_4, 0);
+    }
+
+    if(cpu->output_devices[3] & 0x10 && !(cpu->previous_output_devices[3] & 0x10)){ // UFO hit sound.
+        Mix_PlayChannel(-1, sound_state->invader_die, 0);
+    }
+
+    memcpy(cpu->previous_output_devices,cpu->output_devices, ArraySize(cpu->output_devices));
 
 }
 
@@ -292,7 +331,7 @@ static u32 ExecuteInstruction(CPU *cpu){
         case 0x02:
         case 0x12:{
             u8 register_pair_index = (cpu->instruction & 0xF0) >> 4;
-            *cpu->wide_register_map[register_pair_index] = cpu->A;
+            cpu->memory[*cpu->wide_register_map[register_pair_index]] = cpu->A;
 
             return 7;
         }

@@ -94,14 +94,17 @@ static void PrintCPUInfo(CPU *cpu){
 static void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input, SDL_Renderer *renderer){
     static SDL_Texture *game_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, GAME_WIDTH, GAME_HEIGHT);
     static CPU cpu = {};
+    static SoundState sound_state = {};
 
-    // Put this variables in a struct.
     static float frame_time = 1000.0f/60.0f; // In milliseconds.
     static int cycles_delta = 0;
     
     static double cpu_period;
     static int cycles_per_frame;
+
     if(!cpu.is_initialized){
+        InitSounds(&sound_state);
+
         cpu.clock_speed = 2000000; // 2MHz
 
         cpu_period = 1000.0f/(double)(cpu.clock_speed); // In milliseconds.
@@ -155,10 +158,12 @@ static void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 p
         cpu.shift_register = 0x00;
         
         cpu.is_initialized = true;
+
+        SDL_SetTextureScaleMode(game_texture, SDL_ScaleModeNearest);
     }
 
     while(cycles_delta < cycles_per_frame){
-        UpdateDevices(&cpu, input);
+        UpdateDevices(&cpu, input, &sound_state);
         u8 previous;
         if(cpu.PC < cpu.rom_size){
             previous = cpu.memory[0x90];
@@ -189,7 +194,9 @@ static void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 p
             return;
         }
 
-        PrintCPUInfo(&cpu);
+        // PrintCPUInfo(&cpu);
+        if(cpu.PC == 0x1679)
+            int a = 0;
     }
 
     // VBLANK interrupt. Always called after 33333 cycles.
