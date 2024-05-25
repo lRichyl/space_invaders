@@ -8,39 +8,49 @@ static Arena arena;
 //     u16 vram_address = 0x2400;
 
 //     SDL_LockTexture(game_texture, NULL, (void**)&pixels, &pitch);
-//     for(int i = 0; i < pitch * GAME_HEIGHT; i += 24){
-//         pixels[i]   = (cpu->memory[vram_address + (i / 8 / 3)] & 0x80) * 255;
-//         pixels[i+1] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x80) * 255; 
-//         pixels[i+2] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x80) * 255;
+//     for(int i = 0; i < pitch * GAME_HEIGHT; i += 32){
+//         // for (int bit = 0; bit < 32; ++bit) {
+//             pixels[i]   = (cpu->memory[vram_address] & 0x01) * 255;
+//             pixels[i+1] = (cpu->memory[vram_address] & 0x01) * 255; 
+//             pixels[i+2] = (cpu->memory[vram_address] & 0x01) * 255;
+//             pixels[i+3] = 0;
+            
+//             pixels[i+4] = (cpu->memory[vram_address] & 0x02) * 255;
+//             pixels[i+5] = (cpu->memory[vram_address] & 0x02) * 255;
+//             pixels[i+6] = (cpu->memory[vram_address] & 0x02) * 255;
+//             pixels[i+7] = 0;
 
-//         pixels[i+3] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x40) * 255;
-//         pixels[i+4] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x40) * 255;
-//         pixels[i+5] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x40) * 255;
+//             pixels[i+8] = (cpu->memory[vram_address] & 0x04) * 255;
+//             pixels[i+9] = (cpu->memory[vram_address] & 0x04) * 255;
+//             pixels[i+10] = (cpu->memory[vram_address] & 0x04) * 255;
+//             pixels[i+11] = 0;
+        
+//             pixels[i+12]  = (cpu->memory[vram_address] & 0x08) * 255;
+//             pixels[i+13] = (cpu->memory[vram_address] & 0x08) * 255;
+//             pixels[i+14] = (cpu->memory[vram_address] & 0x08) * 255;
+//             pixels[i+15] = 0;
 
-//         pixels[i+6] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x20) * 255;
-//         pixels[i+7] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x20) * 255;
-//         pixels[i+8] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x20) * 255;
+//             pixels[i+16] = (cpu->memory[vram_address] & 0x10) * 255;
+//             pixels[i+17] = (cpu->memory[vram_address] & 0x10) * 255;
+//             pixels[i+18] = (cpu->memory[vram_address] & 0x10) * 255;
+//             pixels[i+19] = 0;
 
-//         pixels[i+9]  = (cpu->memory[vram_address + (i / 8 / 3)] & 0x10) * 255;
-//         pixels[i+10] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x10) * 255;
-//         pixels[i+11] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x10) * 255;
+//             pixels[i+20] = (cpu->memory[vram_address] & 0x20) * 255;
+//             pixels[i+21] = (cpu->memory[vram_address] & 0x20) * 255;
+//             pixels[i+22] = (cpu->memory[vram_address] & 0x20) * 255;
+//             pixels[i+23] = 0;
 
-//         pixels[i+12] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x08) * 255;
-//         pixels[i+13] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x08) * 255;
-//         pixels[i+14] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x08) * 255;
+//             pixels[i+24] = (cpu->memory[vram_address] & 0x40) * 255;
+//             pixels[i+25] = (cpu->memory[vram_address] & 0x40) * 255;
+//             pixels[i+26] = (cpu->memory[vram_address] & 0x40) * 255;
+//             pixels[i+27] = 0;
 
-//         pixels[i+15] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x04) * 255;
-//         pixels[i+16] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x04) * 255;
-//         pixels[i+17] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x04) * 255;
-
-//         pixels[i+18] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x02) * 255;
-//         pixels[i+19] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x02) * 255;
-//         pixels[i+20] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x02) * 255;
-
-//         pixels[i+21] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x01) * 255;
-//         pixels[i+22] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x01) * 255;
-//         pixels[i+23] = (cpu->memory[vram_address + (i / 8 / 3)] & 0x01) * 255;
-
+//             pixels[i+28] = (cpu->memory[vram_address] & 0x80) * 255;
+//             pixels[i+29] = (cpu->memory[vram_address] & 0x80) * 255;
+//             pixels[i+30] = (cpu->memory[vram_address] & 0x80) * 255;
+//             pixels[i+31] = 0;
+//         // }
+//             vram_address++;
 //     }
 //     SDL_UnlockTexture(game_texture);
 
@@ -51,7 +61,6 @@ void RenderSpaceInvaders(CPU *cpu, SDL_Renderer *renderer, SDL_Texture *game_tex
     u8 *pixels;
     int pitch;
     u16 vram_address = 0x2400;
-
     SDL_LockTexture(game_texture, NULL, (void**)&pixels, &pitch);
 
     for (int y = 0; y < GAME_HEIGHT; ++y) {
@@ -59,12 +68,13 @@ void RenderSpaceInvaders(CPU *cpu, SDL_Renderer *renderer, SDL_Texture *game_tex
             u8 byte = cpu->memory[vram_address + (y * (GAME_WIDTH / 8)) + (x / 8)];
             for (int bit = 0; bit < 8; ++bit) {
                 u8 pixel_value = (byte & (0x01 << bit)) ? 0xFF : 0x00;
-                int pixel_index = (y * pitch) + ((x + bit) * 3);
+                int pixel_index = (y * pitch) + ((x + bit) * 4);
                 
                 // Set the RGB values (white for set bit, black for unset bit)
                 pixels[pixel_index] = pixel_value;      // Red
                 pixels[pixel_index + 1] = pixel_value;  // Green
                 pixels[pixel_index + 2] = pixel_value;  // Blue
+                pixels[pixel_index + 3] = 0;  // Blue
             }
         }
     }
@@ -74,7 +84,7 @@ void RenderSpaceInvaders(CPU *cpu, SDL_Renderer *renderer, SDL_Texture *game_tex
     SDL_UnlockTexture(game_texture);
     // SDL_RenderCopy(renderer, game_texture, NULL, NULL);
     SDL_Rect src_rect = { 0, 0, GAME_WIDTH, GAME_HEIGHT };
-    SDL_Rect dst_rect = { 0, -40, GAME_WIDTH, GAME_HEIGHT }; // Swapped width and height for rotation
+    SDL_Rect dst_rect = { -60, 70, WINDOW_HEIGHT, WINDOW_WIDTH}; // Swapped width and height for rotation
     double angle = 90; // 90 degrees counterclockwise rotation
     SDL_RendererFlip flip = (SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL);
 
@@ -104,6 +114,7 @@ static void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 p
 
     if(!cpu.is_initialized){
         InitSounds(&sound_state);
+
 
         cpu.clock_speed = 2000000; // 2MHz
 

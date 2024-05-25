@@ -1,8 +1,8 @@
 // Space invaders aspect ratio.
-#define WINDOW_WIDTH  224 // 875
-#define WINDOW_HEIGHT 256 // 1000
-#define GAME_WIDTH  WINDOW_HEIGHT
-#define GAME_HEIGHT WINDOW_WIDTH
+#define GAME_WIDTH  256 // 875
+#define GAME_HEIGHT 224 // 1000
+#define WINDOW_WIDTH  GAME_HEIGHT * 4
+#define WINDOW_HEIGHT GAME_WIDTH  * 4 
 
 
 #if BUILD_SLOW
@@ -60,7 +60,7 @@ int main(int argc, char **argv){
     }
 
     // SDL_Window *window;
-    SDL_Window *window = SDL_CreateWindow("Space Invaders", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, GAME_WIDTH, GAME_HEIGHT, SDL_WINDOW_OPENGL);
+    SDL_Window *window = SDL_CreateWindow("Space Invaders", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
     if (!window) {
         printf("Error creating the window: %s", SDL_GetError());
         return 0;
