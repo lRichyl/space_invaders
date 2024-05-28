@@ -1,61 +1,4 @@
-
-
 static Arena arena;
-
-// static void RenderSpaceInvaders(CPU *cpu, SDL_Renderer *renderer, SDL_Texture *game_texture){
-//     u8 *pixels;
-//     int pitch;
-//     u16 vram_address = 0x2400;
-
-//     SDL_LockTexture(game_texture, NULL, (void**)&pixels, &pitch);
-//     for(int i = 0; i < pitch * GAME_HEIGHT; i += 32){
-//         // for (int bit = 0; bit < 32; ++bit) {
-//             pixels[i]   = (cpu->memory[vram_address] & 0x01) * 255;
-//             pixels[i+1] = (cpu->memory[vram_address] & 0x01) * 255; 
-//             pixels[i+2] = (cpu->memory[vram_address] & 0x01) * 255;
-//             pixels[i+3] = 0;
-            
-//             pixels[i+4] = (cpu->memory[vram_address] & 0x02) * 255;
-//             pixels[i+5] = (cpu->memory[vram_address] & 0x02) * 255;
-//             pixels[i+6] = (cpu->memory[vram_address] & 0x02) * 255;
-//             pixels[i+7] = 0;
-
-//             pixels[i+8] = (cpu->memory[vram_address] & 0x04) * 255;
-//             pixels[i+9] = (cpu->memory[vram_address] & 0x04) * 255;
-//             pixels[i+10] = (cpu->memory[vram_address] & 0x04) * 255;
-//             pixels[i+11] = 0;
-        
-//             pixels[i+12]  = (cpu->memory[vram_address] & 0x08) * 255;
-//             pixels[i+13] = (cpu->memory[vram_address] & 0x08) * 255;
-//             pixels[i+14] = (cpu->memory[vram_address] & 0x08) * 255;
-//             pixels[i+15] = 0;
-
-//             pixels[i+16] = (cpu->memory[vram_address] & 0x10) * 255;
-//             pixels[i+17] = (cpu->memory[vram_address] & 0x10) * 255;
-//             pixels[i+18] = (cpu->memory[vram_address] & 0x10) * 255;
-//             pixels[i+19] = 0;
-
-//             pixels[i+20] = (cpu->memory[vram_address] & 0x20) * 255;
-//             pixels[i+21] = (cpu->memory[vram_address] & 0x20) * 255;
-//             pixels[i+22] = (cpu->memory[vram_address] & 0x20) * 255;
-//             pixels[i+23] = 0;
-
-//             pixels[i+24] = (cpu->memory[vram_address] & 0x40) * 255;
-//             pixels[i+25] = (cpu->memory[vram_address] & 0x40) * 255;
-//             pixels[i+26] = (cpu->memory[vram_address] & 0x40) * 255;
-//             pixels[i+27] = 0;
-
-//             pixels[i+28] = (cpu->memory[vram_address] & 0x80) * 255;
-//             pixels[i+29] = (cpu->memory[vram_address] & 0x80) * 255;
-//             pixels[i+30] = (cpu->memory[vram_address] & 0x80) * 255;
-//             pixels[i+31] = 0;
-//         // }
-//             vram_address++;
-//     }
-//     SDL_UnlockTexture(game_texture);
-
-//     SDL_RenderCopy(renderer, game_texture, NULL, NULL);
-// }
 
 void RenderSpaceInvaders(CPU *cpu, SDL_Renderer *renderer, SDL_Texture *game_texture) {
     u8 *pixels;
@@ -105,6 +48,9 @@ static void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 p
     static SDL_Texture *game_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, GAME_WIDTH, GAME_HEIGHT);
     static CPU cpu = {};
     static SoundState sound_state = {};
+    
+    static InstructionInfo instructions_info[INSTRUCTION_COUNT];
+    // static 
 
     static float frame_time = 1000.0f/60.0f; // In milliseconds.
     static int cycles_delta = 0;
@@ -113,6 +59,7 @@ static void RunSpaceInvaders(b32 *is_running, LARGE_INTEGER starting_time, i64 p
     static int cycles_per_frame;
 
     if(!cpu.is_initialized){
+        InitInstructionsInfo(instructions_info);
         InitSounds(&sound_state);
 
 

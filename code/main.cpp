@@ -40,6 +40,7 @@ FILE *file;
 #include "arena.cpp"
 #include "file_handling.cpp"
 #include "sound.cpp"
+#include "disassembler.cpp"
 #include "cpu.cpp"
 
 #include <windows.h>
