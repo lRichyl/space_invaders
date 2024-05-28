@@ -240,41 +240,50 @@ void UpdateDevices(CPU *cpu, const u8 *input, SoundState *sound_state){
     // Ports 3 and 5 are for playing sounds.
     // Port 3 sounds
     if(cpu->output_devices[1] & 0x01 && !(cpu->previous_output_devices[1] & 0x01)){ // UFO sound.
-        Mix_PlayChannel(-1, sound_state->ufo, 0);
+        if(sound_state->ufo)
+            Mix_PlayChannel(-1, sound_state->ufo, 0);
     }
 
     if(cpu->output_devices[1] & 0x02 && !(cpu->previous_output_devices[1] & 0x02)){ // Shooting sound.
-        Mix_PlayChannel(-1, sound_state->shot, 0);
+        if(sound_state->shot)
+            Mix_PlayChannel(-1, sound_state->shot, 0);
     }
 
     if(cpu->output_devices[1] & 0x04 && !(cpu->previous_output_devices[1] & 0x04)){ // Player dying sound.
-        Mix_PlayChannel(-1, sound_state->player_die, 0);
+        if(sound_state->player_die)
+            Mix_PlayChannel(-1, sound_state->player_die, 0);
     }
 
     if(cpu->output_devices[1] & 0x08 && !(cpu->previous_output_devices[1] & 0x08)){ // Invader dying sound.
-        Mix_PlayChannel(-1, sound_state->invader_die, 0);
+        if(sound_state->invader_die)
+            Mix_PlayChannel(-1, sound_state->invader_die, 0);
     }
 
     // Port 5 sounds
 
     if(cpu->output_devices[3] & 0x01 && !(cpu->previous_output_devices[3] & 0x01)){ // Fleet 1 sound.
-        Mix_PlayChannel(-1, sound_state->fleet_1, 0);
+        if(sound_state->fleet_1)
+            Mix_PlayChannel(-1, sound_state->fleet_1, 0);
     }
 
     if(cpu->output_devices[3] & 0x02 && !(cpu->previous_output_devices[3] & 0x02)){ // Fleet 2 sound.
-        Mix_PlayChannel(-1, sound_state->fleet_2, 0);
+        if(sound_state->fleet_2)
+            Mix_PlayChannel(-1, sound_state->fleet_2, 0);
     }
 
     if(cpu->output_devices[3] & 0x04 && !(cpu->previous_output_devices[3] & 0x04)){ // Fleet 3 sound.
-        Mix_PlayChannel(-1, sound_state->fleet_3, 0);
+        if(sound_state->fleet_3)
+            Mix_PlayChannel(-1, sound_state->fleet_3, 0);
     }
 
     if(cpu->output_devices[3] & 0x08 && !(cpu->previous_output_devices[3] & 0x08)){ // Fleet 4 sound.
-        Mix_PlayChannel(-1, sound_state->fleet_4, 0);
+        if(sound_state->fleet_4)
+            Mix_PlayChannel(-1, sound_state->fleet_4, 0);
     }
 
     if(cpu->output_devices[3] & 0x10 && !(cpu->previous_output_devices[3] & 0x10)){ // UFO hit sound.
-        Mix_PlayChannel(-1, sound_state->invader_die, 0);
+        if(sound_state->invader_die)
+            Mix_PlayChannel(-1, sound_state->invader_die, 0);
     }
 
     memcpy(cpu->previous_output_devices,cpu->output_devices, ArraySize(cpu->output_devices));
