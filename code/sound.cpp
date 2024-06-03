@@ -1,22 +1,9 @@
+#include <stdio.h>
 
-struct SoundEffect{
-    Mix_Chunk *sound;
-    bool already_played;
-};
+#include "sound.h"
 
-struct SoundState{
-    Mix_Chunk *ufo;
-    Mix_Chunk *shot;
-    Mix_Chunk *player_die;
-    Mix_Chunk *invader_die;
-    Mix_Chunk *fleet_1;
-    Mix_Chunk *fleet_2;
-    Mix_Chunk *fleet_3;
-    Mix_Chunk *fleet_4;
-    // Mix_Chunk *ufo_hit;
-};
 
-static Mix_Chunk *LoadSound(const char *name, const char *path){
+Mix_Chunk *LoadSound(const char *name, const char *path){
     Mix_Chunk *sound = Mix_LoadWAV(path);
     if(!sound){
         printf("Failed to load sound effect: %s\t SDL_mixer Error: %s\n", name, Mix_GetError());
@@ -24,7 +11,7 @@ static Mix_Chunk *LoadSound(const char *name, const char *path){
     return sound;
 }
 
-static void InitSounds(SoundState *sound_state){
+void InitSounds(SoundState *sound_state){
     sound_state->ufo         = LoadSound("UFO", "ufo_lowpitch.wav");
     sound_state->shot        = LoadSound("Shot", "shoot.wav");
     sound_state->player_die  = LoadSound("Player die", "explosion.wav");

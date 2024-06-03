@@ -1,79 +1,9 @@
-#define INPUT_DEVICES_AMOUNT 4 
-#define OUTPUT_DEVICES_AMOUNT 5 
+#include <string.h>
+#include <stdio.h>
 
-struct CPU {
-    b32 is_initialized;
-    float clock_speed;
-
-    union{
-        u8 instruction;
-        u8 data_byte;
-    };
-    // Registers
-    union{
-        u16 BC;
-        struct{
-            u8 C;
-            u8 B;
-        };
-    };
-    union{
-        u16 DE;
-        struct{
-            u8 E;
-            u8 D;
-        };
-    };
-    union{
-        u16 HL;
-        struct{
-            u8 L;
-            u8 H;
-        };
-    };
-
-    union{
-        u16 PSW;
-        struct{
-            u8 flags;
-            u8 A; // Accumulator
-        };
-    };
-    u8 M; // Pseudo register that contains the dereferenced memory pointed by HL.
-    b32 halt;
-
-    u16 SP; // Stack pointer
-    u16 PC; // Program counter
-
-
-    u8 memory[Kilobytes(64)]; // 64 Kilobytes of memory.
-
-    u16 *wide_register_map[4];
-    u8  *register_map[8];
-
-    b32 interrupts_enabled;
-    b32 call_interrupt;
-    b32 mid_screen_interrupt_handled;
-
-    u8 input_devices[INPUT_DEVICES_AMOUNT];
-    u8 output_devices[OUTPUT_DEVICES_AMOUNT];
-    u8 previous_output_devices[OUTPUT_DEVICES_AMOUNT]; 
-
-    u16 shift_register;
-
-
-    u32 instruction_size;
-    u32 rom_size; // For testing.
-};
-
-
-enum Flag {
-    FLAG_CARRY    = 0x01,
-    FLAG_PARITY   = 0x04,
-    FLAG_AUXCARRY = 0x10,
-    FLAG_ZERO     = 0x40,
-    FLAG_SIGN     = 0x80
-};
+#include "cpu.h"
+#include "SDL.h"
+#include "file_handling.h"
 
 static void SetFlag(CPU *cpu, Flag flag){
     cpu->flags = cpu->flags | flag;
@@ -83,16 +13,8 @@ static void UnSetFlag(CPU *cpu, Flag flag){
     cpu->flags = cpu->flags & ~(flag);
 }
 
-
-static void FetchNextInstructionByte(CPU *cpu){
-    cpu->instruction_size++;
-    cpu->instruction = cpu->memory[cpu->PC];
-    fprintf(file, "PC: %X\tInstruction: %X \t  %X\n",cpu->PC, cpu->instruction, cpu->memory[0x20C0]);
-    cpu->PC++;
-}
-
 void PushToStack(CPU *cpu, i32 register_pair_index){
-    assert(register_pair_index <= 3);
+    Assert(register_pair_index <= 3);
 
     if(register_pair_index == -1){  // Push the program counter to the stack.
         cpu->memory[cpu->SP - 1] = (u8)((cpu->PC & 0xFF00) >> 8);
@@ -108,11 +30,11 @@ void PushToStack(CPU *cpu, i32 register_pair_index){
     cpu->SP -= 2;
 }
 
-void PopFromStack(CPU *cpu, i32 register_pair_index){
+static void PopFromStack(CPU *cpu, i32 register_pair_index){
     u8 second;
     u8 first;
 
-    assert(register_pair_index <= 4 && register_pair_index >= -1);
+    Assert(register_pair_index <= 4 && register_pair_index >= -1);
 
     if(register_pair_index == -1){ // Pop to program counter.  For RET instructions.
         second = cpu->memory[cpu->SP];
@@ -290,7 +212,70 @@ void UpdateDevices(CPU *cpu, const u8 *input, SoundState *sound_state){
 
 }
 
-static u32 ExecuteInstruction(CPU *cpu){
+void FetchNextInstructionByte(CPU *cpu){
+    cpu->instruction_size++;
+    cpu->instruction = cpu->memory[cpu->PC];
+    // printf("PC: %X\tInstruction: %X \t  %X\n",cpu->PC, cpu->instruction, cpu->memory[0x20C0]);
+    cpu->PC++;
+}
+
+void InitCpu(CPU *cpu, Arena *arena){
+    cpu->clock_speed = 2000000; // 2MHz
+
+    cpu->timing.cpu_period = 1000.0f/(double)(cpu->clock_speed); // In milliseconds.
+    cpu->timing.cycles_per_frame = (int)(cpu->timing.frame_time/cpu->timing.cpu_period);
+    cpu->timing.frame_time = 1000.0f/60.0f; // In milliseconds.
+    cpu->timing.cycles_delta = 0;
+
+    printf("Frame time: %f\n",       cpu->timing.frame_time);
+    printf("Period: %f\n",           cpu->timing.cpu_period);
+    printf("Cycles per frame: %d\n", cpu->timing.cycles_per_frame);
+    printf("Cycles delta: %d\n",     cpu->timing.cycles_delta);
+
+    cpu->interrupts_enabled = true;
+    cpu->call_interrupt     = false;
+    cpu->mid_screen_interrupt_handled = false;
+
+    // Flags with constant values.
+    cpu->flags = cpu->flags | 0x02;    // 1 
+    cpu->flags = cpu->flags & ~(0x08); // 0
+    cpu->flags = cpu->flags & ~(0x20); // 0
+
+    u8 *loaded_rom = load_binary_file(arena, "invaders.bin", &cpu->rom_size);
+    memcpy(cpu->memory, loaded_rom, cpu->rom_size);
+
+    cpu->wide_register_map[0] = &cpu->BC;
+    cpu->wide_register_map[1] = &cpu->DE;
+    cpu->wide_register_map[2] = &cpu->HL;
+    cpu->wide_register_map[3] = &cpu->PSW;
+
+    cpu->register_map[0] = &cpu->B;
+    cpu->register_map[1] = &cpu->C;
+    cpu->register_map[2] = &cpu->D;
+    cpu->register_map[3] = &cpu->E;
+    cpu->register_map[4] = &cpu->H;
+    cpu->register_map[5] = &cpu->L;
+    cpu->register_map[6] = &cpu->M;
+    cpu->register_map[7] = &cpu->A;
+
+    // Initialize the Input/Output devices.
+    cpu->input_devices[0] = 0x0E;
+    cpu->input_devices[1] = 0x08;
+    cpu->input_devices[2] = 0x00;
+    cpu->input_devices[3] = 0x00; 
+
+    cpu->output_devices[0] = 0x00; // Shift amount
+    cpu->output_devices[1] = 0x00; // Sounds
+    cpu->output_devices[2] = 0x00; // Shift data
+    cpu->output_devices[3] = 0x00; // More sounds
+    cpu->output_devices[4] = 0x00; // Watchdog. Not necessary for emulation. Ignored.
+
+    cpu->shift_register = 0x00;
+    
+    cpu->is_initialized = true;
+}
+
+u32 ExecuteInstruction(CPU *cpu){
     cpu->instruction_size = 0;
     // This function returns the duration in cycles of the current instruction.
 
@@ -306,7 +291,7 @@ static u32 ExecuteInstruction(CPU *cpu){
         case 0x18:
         case 0x28:
         case 0x38: {
-            fprintf(file, "NOP instruction\n");
+            // printf("NOP instruction\n");
 
             return 4; // Duration in cycles.
         }
@@ -804,7 +789,7 @@ static u32 ExecuteInstruction(CPU *cpu){
         // OUT instruction. Send the byte stored in the accumulator to device number [d8]. 
         case 0xD3:{
                 FetchNextInstructionByte(cpu);
-                assert(cpu->data_byte < OUTPUT_DEVICES_AMOUNT + 2 && cpu->data_byte > 1);
+                Assert(cpu->data_byte < OUTPUT_DEVICES_AMOUNT + 2 && cpu->data_byte > 1);
                 cpu->output_devices[cpu->data_byte - 2] = cpu->A; // Space invader ouput devices start at #2.
 
                 // Port 4. Shift data.
@@ -1097,7 +1082,7 @@ static u32 ExecuteInstruction(CPU *cpu){
         // IN instruction.  Read from a device.   
         case 0xDB:{ 
                 FetchNextInstructionByte(cpu);
-                assert(cpu->data_byte < INPUT_DEVICES_AMOUNT);
+                Assert(cpu->data_byte < INPUT_DEVICES_AMOUNT);
                 cpu->A = cpu->input_devices[cpu->data_byte];
             return 10;
         }

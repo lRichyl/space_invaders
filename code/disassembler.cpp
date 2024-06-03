@@ -1,11 +1,6 @@
-#define INSTRUCTION_COUNT 256
+#include "disassembler.h"
 
-struct InstructionInfo{
-    i32 byte_size;
-    const char *name;
-};
-
-static void InitInstructionsInfo(InstructionInfo *instructions_info){
+void InitInstructionsInfo(InstructionInfo *instructions_info){
     instructions_info[0x00] = InstructionInfo{1, "NOP"};
     instructions_info[0x01] = InstructionInfo{3, "LXI B,d16"};
     instructions_info[0x02] = InstructionInfo{1, "STAX B"};

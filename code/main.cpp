@@ -1,55 +1,16 @@
-// Space invaders aspect ratio.
-#define GAME_WIDTH  256 // 875
-#define GAME_HEIGHT 224 // 1000
-#define WINDOW_WIDTH  GAME_HEIGHT * 4
-#define WINDOW_HEIGHT GAME_WIDTH  * 4 
-
-
-#if BUILD_SLOW
-#define assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
-#else
-#define assert(Expression)
-#endif
-
-#define ArraySize(array) (sizeof(array) / sizeof((array)[0]))
-
-#include <stdint.h>
-
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-
-typedef int8_t  i8;
-typedef int16_t i16;
-typedef int32_t i32;
-typedef int64_t i64;
-typedef i32 b32;
-
-typedef float f32;
-typedef double f64;
-
-
 #include <stdio.h>
-#include <string.h>
+
 #include "SDL.h"
 #include "SDL_mixer.h"
-
-FILE *file;
-#include "defines.h"
-#include "arena.cpp"
-#include "file_handling.cpp"
-#include "sound.cpp"
-#include "disassembler.cpp"
-#include "cpu.cpp"
-
 #include <windows.h>
-#include "space_invaders.cpp"
+
+#include "common.h"
+
+#include "space_invaders.h"
 
 
 
 int main(int argc, char **argv){
-    file = fopen("test.txt", "w");
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO) < 0) {
         printf("SDL2 Initialization failed: %s", SDL_GetError());
         return 0;
@@ -81,6 +42,9 @@ int main(int argc, char **argv){
 
     u32 count = 1;
 
+    SpaceInvaders space_invaders;
+    InitSpaceInvaders(&space_invaders, renderer);
+
     LARGE_INTEGER last_counter;
     QueryPerformanceCounter(&last_counter);
 
@@ -96,7 +60,7 @@ int main(int argc, char **argv){
         }
       //  SDL_RenderClear(renderer);
 
-        RunSpaceInvaders(&is_running, last_counter, perf_count_frequency, input, renderer);
+        RunSpaceInvaders(&space_invaders, &is_running, last_counter, perf_count_frequency, input, renderer);
 
         SDL_RenderPresent(renderer);
 
@@ -122,6 +86,5 @@ int main(int argc, char **argv){
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
     Mix_Quit();
-    fclose(file);
     return 0;
 }
