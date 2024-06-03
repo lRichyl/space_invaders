@@ -66,7 +66,6 @@ u8* load_binary_file(Arena *arena, const char* file_name, u32 *file_size){
     // Read file contents into buffer
     if (fread(buffer, *file_size, 1, fp) != 1) {
         fclose(fp);
-        free(buffer);
         printf("Error: Failed to read entire file %s\n", file_name);
         exit(EXIT_FAILURE);
     }

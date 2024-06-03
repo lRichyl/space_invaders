@@ -3,9 +3,6 @@
 #include "sound.h"
 #include "disassembler.h"
 
-static Arena arena;
-
-
 static void RenderSpaceInvaders(SpaceInvaders *invaders) {
     u8 *pixels;
     int pitch;

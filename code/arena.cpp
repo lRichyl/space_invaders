@@ -4,12 +4,9 @@
 
 // Initialize the arena
 void init_arena(Arena *arena, unsigned int size) {
-    if(!arena->initialized){
-        arena->start = (char*)malloc(size);
-        arena->current = arena->start;
-        arena->size = size;
-        arena->initialized = true;
-    }
+    arena->start = (char*)malloc(size);
+    arena->current = arena->start;
+    arena->size = size;
 }
 
 // Allocate memory from the arena
