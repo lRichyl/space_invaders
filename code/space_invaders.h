@@ -12,12 +12,21 @@
 #define WINDOW_WIDTH  GAME_HEIGHT * 4
 #define WINDOW_HEIGHT GAME_WIDTH  * 4 
 
+struct TimingInfo{
+    float frame_time = 1000.0f/60.0f; // In milliseconds.
+    int cycles_delta = 0;
+    
+    double cpu_period;
+    int cycles_per_frame;
+};
+
 struct SpaceInvaders{
     Arena arena;
     SDL_Renderer *renderer;
     SDL_Texture *game_texture;
     CPU cpu;
     SoundState sound_state;
+    TimingInfo timing;
 };
 
 void InitSpaceInvaders(SpaceInvaders *invaders, SDL_Renderer *renderer);

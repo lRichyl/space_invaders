@@ -224,16 +224,6 @@ void FetchNextInstructionByte(CPU *cpu){
 void InitCpu(CPU *cpu, Arena *arena){
     cpu->clock_speed = 2000000; // 2MHz
 
-    cpu->timing.cpu_period = 1000.0f/(double)(cpu->clock_speed); // In milliseconds.
-    cpu->timing.cycles_per_frame = (int)(cpu->timing.frame_time/cpu->timing.cpu_period);
-    cpu->timing.frame_time = 1000.0f/60.0f; // In milliseconds.
-    cpu->timing.cycles_delta = 0;
-
-    printf("Frame time: %f\n",       cpu->timing.frame_time);
-    printf("Period: %f\n",           cpu->timing.cpu_period);
-    printf("Cycles per frame: %d\n", cpu->timing.cycles_per_frame);
-    printf("Cycles delta: %d\n",     cpu->timing.cycles_delta);
-
     cpu->interrupts_enabled = true;
     cpu->call_interrupt     = false;
     cpu->mid_screen_interrupt_handled = false;

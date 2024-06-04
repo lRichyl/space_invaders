@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "space_invaders.h"
 #include "file_handling.h"
 #include "sound.h"
@@ -59,28 +61,38 @@ void InitSpaceInvaders(SpaceInvaders *invaders, SDL_Renderer *renderer){
     InitSounds(&invaders->sound_state);
     InitCpu(&invaders->cpu, &invaders->arena);
 
+    invaders->timing.cpu_period = 1000.0f/(double)(invaders->cpu.clock_speed); // In milliseconds.
+    invaders->timing.cycles_per_frame = (int)(invaders->timing.frame_time/invaders->timing.cpu_period);
+    invaders->timing.frame_time = 1000.0f/60.0f; // In milliseconds.
+    invaders->timing.cycles_delta = 0;
+
+    printf("Frame time: %f\n",       invaders->timing.frame_time);
+    printf("Period: %f\n",           invaders->timing.cpu_period);
+    printf("Cycles per frame: %d\n", invaders->timing.cycles_per_frame);
+    printf("Cycles delta: %d\n",     invaders->timing.cycles_delta);
+
     SDL_SetTextureScaleMode(invaders->game_texture, SDL_ScaleModeNearest);
 }
 
-void RunSpaceInvaders(SpaceInvaders *inv, b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input){
-    CPU *cpu = &inv->cpu;
-    while(inv->cpu.timing.cycles_delta < inv->cpu.timing.cycles_per_frame){
-        UpdateDevices(&inv->cpu, input, &inv->sound_state);
+void RunSpaceInvaders(SpaceInvaders *invaders, b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input){
+    CPU *cpu = &invaders->cpu;
+    while(invaders->timing.cycles_delta < invaders->timing.cycles_per_frame){
+        UpdateDevices(&invaders->cpu, input, &invaders->sound_state);
         if(cpu->PC < cpu->rom_size){
             if(!cpu->call_interrupt){
                 SDL_PumpEvents();
 
                 FetchNextInstructionByte(cpu);
-                cpu->timing.cycles_delta += ExecuteInstruction(cpu);
+                invaders->timing.cycles_delta += ExecuteInstruction(cpu);
                 // printf("Instruction size: %d\n", cpu->instruction_size);
             }else{
                 cpu->halt = false;
-                cpu->timing.cycles_delta += ExecuteInstruction(cpu);
                 cpu->call_interrupt = false;
+                invaders->timing.cycles_delta += ExecuteInstruction(cpu);
             }
 
             if(cpu->interrupts_enabled){
-                if(cpu->timing.cycles_delta >= 16667 && !cpu->mid_screen_interrupt_handled){ // Mid screen interrupt.
+                if(invaders->timing.cycles_delta >= 16667 && !cpu->mid_screen_interrupt_handled){ // Mid screen interrupt.
                     cpu->instruction = 0xCF; // RST 1
                     cpu->call_interrupt = true;
                     cpu->interrupts_enabled = false;
@@ -90,7 +102,7 @@ void RunSpaceInvaders(SpaceInvaders *inv, b32 *is_running, LARGE_INTEGER startin
         }
         else{ // If the program counter goes outside the memory range exit.
             *is_running = false;
-            SDL_DestroyTexture(inv->game_texture);
+            SDL_DestroyTexture(invaders->game_texture);
             return;
         }
     }
@@ -108,7 +120,7 @@ void RunSpaceInvaders(SpaceInvaders *inv, b32 *is_running, LARGE_INTEGER startin
 
         i64 counter_elapsed = end_counter.QuadPart - starting_time.QuadPart; 
         f32 ms_elapsed     = (f32)((1000.0f*(f32)counter_elapsed) / (f32)perf_count_frequency);
-        if(ms_elapsed >= cpu->timing.frame_time){
+        if(ms_elapsed >= invaders->timing.frame_time){
             // printf("Milliseconds elapsed: \t%f\n", ms_elapsed);
             // printf("Cycles ran last frame: \t%d\n", cycles_delta);
             break;  
@@ -116,8 +128,8 @@ void RunSpaceInvaders(SpaceInvaders *inv, b32 *is_running, LARGE_INTEGER startin
     }
 
 
-    cpu->timing.cycles_delta -= cpu->timing.cycles_per_frame;
+    invaders->timing.cycles_delta -= invaders->timing.cycles_per_frame;
 
 
-    RenderSpaceInvaders(inv);
+    RenderSpaceInvaders(invaders);
 }

@@ -7,16 +7,9 @@
 #define INPUT_DEVICES_AMOUNT 4 
 #define OUTPUT_DEVICES_AMOUNT 5 
 
-struct TimingInfo{
-    float frame_time = 1000.0f/60.0f; // In milliseconds.
-    int cycles_delta = 0;
-    
-    double cpu_period;
-    int cycles_per_frame;
-};
+
 
 struct CPU {
-    TimingInfo timing;
     b32 is_initialized;
     float clock_speed;
 
