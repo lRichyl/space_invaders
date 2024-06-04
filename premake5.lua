@@ -1,4 +1,4 @@
-workspace "MyWorkspace"
+ workspace "MyWorkspace"
    configurations { "Debug", "Release" }
    platforms { "x64" }
    location "build"
@@ -18,6 +18,12 @@ project "SpaceInvaders"
    libdirs { "vendor/sdl2/lib"}
    links {"SDL2", "SDL2main", "SDL2_mixer", "SDL2_ttf", "shell32"}
    includedirs {"code", "vendor/sdl2/include"}
+
+   postbuildcommands {
+     "{COPYFILE} %{prj.location}../vendor/sdl2/lib/SDL2.dll %{prj.location}%{cfg.targetdir}",
+     "{COPYFILE} %{prj.location}../vendor/sdl2/lib/SDL2_mixer.dll %{prj.location}%{cfg.targetdir}",
+     "{COPYFILE} %{prj.location}../vendor/sdl2/lib/SDL2_ttf.dll %{prj.location}%{cfg.targetdir}"
+   }
 
    -- Compiler-specific settings
    filter "toolset:gcc or toolset:clang"
@@ -40,11 +46,7 @@ project "SpaceInvaders"
       defines { "NDEBUG" }
       optimize "On"
 
-   postbuildcommands {
-     "{COPYFILE} ../build/SDL2.dll %{cfg.targetdir}",
-     "{COPYFILE} ../build/SDL2_mixer.dll %{cfg.targetdir}",
-     "{COPYFILE} ../build/SDL2_ttf.dll %{cfg.targetdir}"
-   }
+   
 
 
 --    copy /Y "$(SolutionDir)SDL2.dll" "$(SolutionDir)bin\x64\Debug\"
