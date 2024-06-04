@@ -12,12 +12,12 @@ Mix_Chunk *LoadSound(const char *name, const char *path){
 }
 
 void InitSounds(SoundState *sound_state){
-    sound_state->ufo         = LoadSound("UFO", "ufo_lowpitch.wav");
-    sound_state->shot        = LoadSound("Shot", "shoot.wav");
-    sound_state->player_die  = LoadSound("Player die", "explosion.wav");
-    sound_state->invader_die = LoadSound("Invader killed", "invaderkilled.wav");
-    sound_state->fleet_1     = LoadSound("Fleet 1", "fastinvader1.wav");
-    sound_state->fleet_2     = LoadSound("Fleet 2", "fastinvader2.wav");
-    sound_state->fleet_3     = LoadSound("Fleet 3", "fastinvader3.wav");
-    sound_state->fleet_4     = LoadSound("Fleet 4", "fastinvader4.wav");
+    sound_state->ufo         = LoadSound("UFO", "data/ufo_lowpitch.wav");
+    sound_state->shot        = LoadSound("Shot", "data/shoot.wav");
+    sound_state->player_die  = LoadSound("Player die", "data/explosion.wav");
+    sound_state->invader_die = LoadSound("Invader killed", "data/invaderkilled.wav");
+    sound_state->fleet_1     = LoadSound("Fleet 1", "data/fastinvader1.wav");
+    sound_state->fleet_2     = LoadSound("Fleet 2", "data/fastinvader2.wav");
+    sound_state->fleet_3     = LoadSound("Fleet 3", "data/fastinvader3.wav");
+    sound_state->fleet_4     = LoadSound("Fleet 4", "data/fastinvader4.wav");
 }

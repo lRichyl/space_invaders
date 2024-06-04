@@ -7,32 +7,35 @@
 project "SpaceInvaders"
    objdir ("build/obj/%{cfg.platform}/%{cfg.buildcfg}")
    targetdir ("build/bin/%{cfg.platform}/%{cfg.buildcfg}")
-   debugdir "data"
+   debugdir ""
 
-   kind "ConsoleApp"
+   kind "WindowedApp"
    language "C++"
 
    files {"code/**.cpp" }
 
     -- Common settings
    libdirs { "vendor/sdl2/lib"}
-   links {"SDL2", "SDL2main", "SDL2_mixer", "SDL2_ttf", "shell32"}
+   -- links {"SDL2main", "SDL2",  "SDL2_mixer", "SDL2_ttf", "shell32"}
    includedirs {"code", "vendor/sdl2/include"}
 
    postbuildcommands {
-     "{COPYFILE} %{prj.location}../vendor/sdl2/lib/SDL2.dll %{prj.location}%{cfg.targetdir}",
-     "{COPYFILE} %{prj.location}../vendor/sdl2/lib/SDL2_mixer.dll %{prj.location}%{cfg.targetdir}",
-     "{COPYFILE} %{prj.location}../vendor/sdl2/lib/SDL2_ttf.dll %{prj.location}%{cfg.targetdir}"
+     "{COPYFILE} %{wks.location}/../vendor/sdl2/lib/SDL2.dll %{wks.location}/%{cfg.targetdir}",
+     "{COPYFILE} %{wks.location}/../vendor/sdl2/lib/SDL2_mixer.dll %{wks.location}/%{cfg.targetdir}",
+     "{COPYFILE} %{wks.location}/../vendor/sdl2/lib/SDL2_ttf.dll %{wks.location}/%{cfg.targetdir}",
+     "{COPYFILE} %{wks.location}/%{cfg.targetdir}/SpaceInvaders.exe %{wks.location}/.."
    }
 
    -- Compiler-specific settings
    filter "toolset:gcc or toolset:clang"
-      buildoptions { "-Wall", "-Wextra" }
-      linkoptions { "-pthread" }
+      links {"mingw32", "SDL2main", "SDL2",  "SDL2_mixer", "SDL2_ttf", "shell32"}
+      buildoptions { "-Wall", "-Wextra"}
+      linkoptions { "-pthread", "-mwindows" }
 
-   filter "toolset:msc"
+   filter "toolset:msc*"
+      links {"SDL2main", "SDL2",  "SDL2_mixer", "SDL2_ttf", "shell32"}
       buildoptions { "/W4" }
-      linkoptions { "/SUBSYSTEM:CONSOLE" }
+      linkoptions { "/SUBSYSTEM:WINDOWS" }
 
    filter "platforms:x64"
       architecture "x64"

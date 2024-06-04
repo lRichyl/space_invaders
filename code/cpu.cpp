@@ -241,7 +241,7 @@ void InitCpu(CPU *cpu, Arena *arena){
     cpu->flags = cpu->flags & ~(0x08); // 0
     cpu->flags = cpu->flags & ~(0x20); // 0
 
-    u8 *loaded_rom = load_binary_file(arena, "invaders.bin", &cpu->rom_size);
+    u8 *loaded_rom = load_binary_file(arena, "data/invaders.bin", &cpu->rom_size);
     memcpy(cpu->memory, loaded_rom, cpu->rom_size);
 
     cpu->wide_register_map[0] = &cpu->BC;

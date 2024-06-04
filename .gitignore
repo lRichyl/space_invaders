@@ -1,3 +1,4 @@
 vendor
 build
 test.txt
+*.exe
