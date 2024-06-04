@@ -29,7 +29,6 @@ static void RenderSpaceInvaders(SpaceInvaders *invaders) {
 
     SDL_UnlockTexture(invaders->game_texture);
     // SDL_RenderCopy(renderer, game_texture, NULL, NULL);
-    SDL_Rect src_rect = { 0, 0, GAME_WIDTH, GAME_HEIGHT };
     SDL_Rect dst_rect = { -60, 70, WINDOW_HEIGHT, WINDOW_WIDTH}; // Swapped width and height for rotation
     double angle = 90; // 90 degrees counterclockwise rotation
     SDL_RendererFlip flip = (SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL);
@@ -37,15 +36,15 @@ static void RenderSpaceInvaders(SpaceInvaders *invaders) {
     SDL_RenderCopyEx(invaders->renderer, invaders->game_texture, NULL, &dst_rect, angle, NULL, flip);
 }
 
-static void PrintCPUInfo(CPU *cpu){
-    bool sign   = cpu->flags & FLAG_SIGN;
-    bool zero   = cpu->flags & FLAG_ZERO;
-    bool half   = cpu->flags & FLAG_AUXCARRY;
-    bool parity = cpu->flags & FLAG_PARITY;
-    bool carry  = cpu->flags & FLAG_CARRY;
+// static void PrintCPUInfo(CPU *cpu){
+//     bool sign   = cpu->flags & FLAG_SIGN;
+//     bool zero   = cpu->flags & FLAG_ZERO;
+//     bool half   = cpu->flags & FLAG_AUXCARRY;
+//     bool parity = cpu->flags & FLAG_PARITY;
+//     bool carry  = cpu->flags & FLAG_CARRY;
 
-    // printf("A: %X\tBC: %X\tDE: %X\tHL: %X\tSP: %X\tS%X\tZ%X\tA%X\tP%X\tC%X\t\n\n", cpu->A, cpu->BC, cpu->DE, cpu->HL, cpu->SP, sign, zero, half, parity, carry);
-}
+//     // printf("A: %X\tBC: %X\tDE: %X\tHL: %X\tSP: %X\tS%X\tZ%X\tA%X\tP%X\tC%X\t\n\n", cpu->A, cpu->BC, cpu->DE, cpu->HL, cpu->SP, sign, zero, half, parity, carry);
+// }
 
 void InitSpaceInvaders(SpaceInvaders *invaders, SDL_Renderer *renderer){
     init_arena(&invaders->arena, 100000);
@@ -63,7 +62,7 @@ void InitSpaceInvaders(SpaceInvaders *invaders, SDL_Renderer *renderer){
     SDL_SetTextureScaleMode(invaders->game_texture, SDL_ScaleModeNearest);
 }
 
-void RunSpaceInvaders(SpaceInvaders *inv, b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input, SDL_Renderer *renderer){
+void RunSpaceInvaders(SpaceInvaders *inv, b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input){
     CPU *cpu = &inv->cpu;
     while(inv->cpu.timing.cycles_delta < inv->cpu.timing.cycles_per_frame){
         UpdateDevices(&inv->cpu, input, &inv->sound_state);
@@ -94,10 +93,6 @@ void RunSpaceInvaders(SpaceInvaders *inv, b32 *is_running, LARGE_INTEGER startin
             SDL_DestroyTexture(inv->game_texture);
             return;
         }
-
-        // PrintCPUInfo(&cpu);
-        if(cpu->PC == 0x1679)
-            int a = 0;
     }
 
     // VBLANK interrupt. Always called after 33333 cycles.

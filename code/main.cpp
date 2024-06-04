@@ -40,8 +40,6 @@ int main(int argc, char **argv){
     QueryPerformanceFrequency(&perf_count_frequency_result);
     i64 perf_count_frequency = perf_count_frequency_result.QuadPart;
 
-    u32 count = 1;
-
     SpaceInvaders space_invaders;
     InitSpaceInvaders(&space_invaders, renderer);
 
@@ -60,26 +58,16 @@ int main(int argc, char **argv){
         }
       //  SDL_RenderClear(renderer);
 
-        RunSpaceInvaders(&space_invaders, &is_running, last_counter, perf_count_frequency, input, renderer);
+        RunSpaceInvaders(&space_invaders, &is_running, last_counter, perf_count_frequency, input);
 
         SDL_RenderPresent(renderer);
 
         LARGE_INTEGER end_counter;
         QueryPerformanceCounter(&end_counter);
 
-        i64 counter_elapsed = end_counter.QuadPart - last_counter.QuadPart; 
-        f32 ms_per_frame    = (f32)((1000.0f*(f32)counter_elapsed) / (f32)perf_count_frequency);
-        f32 fps = (f32)perf_count_frequency/(f32)counter_elapsed;
-
-
-
         last_counter = end_counter;
 
-        // count++;
-        // if(count == 100){
-        //     count = 1;
-        //     printf("Milliseconds/frame: %.02fms,  %.02fFPS\n", ms_per_frame, fps);
-        // }
+        
     }
 
     SDL_DestroyWindow(window);

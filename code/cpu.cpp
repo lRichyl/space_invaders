@@ -120,11 +120,13 @@ static u8 SubstractAndSetFlags(CPU *cpu, u8 minuend, u8 sustrahend, b32 check_ca
         UnSetFlag(cpu, FLAG_AUXCARRY);
 
     u16 result_carry = (u16)nibble_minuend + (u16)nibble_sustrahend;
-    if(!(result_carry & 0x100)){
-        if(minuend < sustrahend) 
-            SetFlag(cpu, FLAG_CARRY);
-        else
-            UnSetFlag(cpu, FLAG_CARRY);
+    if(check_carry){
+        if(!(result_carry & 0x100)){
+            if(minuend < sustrahend) 
+                SetFlag(cpu, FLAG_CARRY);
+            else
+                UnSetFlag(cpu, FLAG_CARRY);
+        }
     }
 
     return result;
@@ -1300,7 +1302,7 @@ u32 ExecuteInstruction(CPU *cpu){
             if(!(cpu->instruction & 0x08)){ // ANA instruction.  ANA R  :  A <- A & R   Affects all flags.
                 UnSetFlag(cpu, FLAG_CARRY);
 
-                if((cpu->A & 0x08) | (*cpu->register_map[source]) & 0x08){ // @TODO: Verify how the ANA instructions affects the half carry flag.
+                if(((cpu->A & 0x08) | (*cpu->register_map[source])) & 0x08){ // @TODO: Verify how the ANA instructions affects the half carry flag.
                     SetFlag(cpu, FLAG_AUXCARRY);
                 }else{
                     UnSetFlag(cpu, FLAG_AUXCARRY);
@@ -1339,7 +1341,7 @@ u32 ExecuteInstruction(CPU *cpu){
                 SetZeroSignParity(cpu, cpu->A);
 
             }else{ // CMP instruction.  CMP R  :  A - R
-                u8 difference = SubstractAndSetFlags(cpu, cpu->A, *cpu->register_map[source], true);
+                SubstractAndSetFlags(cpu, cpu->A, *cpu->register_map[source], true);
             }
 
             if(source == 0x06){ // Source register is register M

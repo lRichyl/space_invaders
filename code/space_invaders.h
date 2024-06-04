@@ -21,4 +21,4 @@ struct SpaceInvaders{
 };
 
 void InitSpaceInvaders(SpaceInvaders *invaders, SDL_Renderer *renderer);
-void RunSpaceInvaders(SpaceInvaders *inv, b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input, SDL_Renderer *renderer);
+void RunSpaceInvaders(SpaceInvaders *inv, b32 *is_running, LARGE_INTEGER starting_time, i64 perf_count_frequency, const u8 *input);
