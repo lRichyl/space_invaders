@@ -1,5 +1,6 @@
 # Space Invaders Emulator - 1978 Classic (Intel 8080)
 This emulator faithfully recreates the 1978 arcade classic, Space Invaders, allowing you to relive the authentic retro gaming experience. Originally developed by Tomohiro Nishikado and released by Taito, Space Invaders ran on the Intel 8080 microprocessor, a significant piece of computing history. Our emulator reproduces the original gameplay mechanics, graphics, and sounds, ensuring an authentic and nostalgic experience. With an accurate emulation of the Intel 8080 microprocessor, you'll enjoy the same performance characteristics as the original arcade machine.
+[space_invaders.webm](https://github.com/lRichyl/space_invaders/assets/66743720/4c64b589-fb23-42b3-a086-5c4ab7048d5f)
 
 ## Controls
 **Add Credit** - Z
