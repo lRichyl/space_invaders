@@ -1,4 +1,4 @@
 vendor
 build
 test.txt
-*.exe
+SpaceInvaders.exe
